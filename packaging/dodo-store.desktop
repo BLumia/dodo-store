@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Dodo Store
+Name[zh_CN]=Dodo 应用商店
+GenericName=Application Store
+GenericName[zh_CN]=应用商店
+Comment=Browse and install Flatpak applications
+Comment[zh_CN]=浏览与安装 Flatpak 应用
+Exec=dodo-store
+Icon=dodo-store
+Terminal=false
+Categories=System;PackageManager;
+Keywords=flatpak;store;apps;
+Keywords[zh_CN]=flatpak;应用商店;软件;
+StartupNotify=true
