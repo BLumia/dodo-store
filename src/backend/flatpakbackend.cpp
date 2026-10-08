@@ -266,6 +266,7 @@ void FlatpakBackend::onFlatpakRefResolved(const QString &remote, const QString &
 
 void FlatpakBackend::onFlatpakRefFailed(const QString &url, const QString &error)
 {
+    qWarning() << "flatpak: cannot open link" << url << ":" << error;
     setBusy(false);
     Q_EMIT flatpakRefFailed(url, error);
 }

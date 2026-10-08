@@ -19,9 +19,80 @@
 #include <QVariantMap>
 #include <QUrl>
 #include <QRegularExpression>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QEventLoop>
+#include <QTimer>
+#include <QFile>
 #include <glib.h>
 #include <gio/gio.h>
 #include <flatpak.h>
+
+namespace {
+
+// Synchronously fetches @p url on the current (worker) thread. http/https go
+// through Qt Network and file:// paths through QFile — deliberately not GIO.
+// Apps launched by xdg-desktop-portal inherit GIO_USE_VFS=local, which makes
+// GIO's remote schemes (GVfs) unavailable, so g_file_load_contents() would fail
+// with "operation not supported" for exactly the flatpak+https links the portal
+// hands us.
+bool readUri(const QString &url, QByteArray *out, QString *error)
+{
+    const QUrl u(url);
+    const QString scheme = u.scheme().toLower();
+
+    if (scheme.isEmpty() || scheme == QLatin1String("file")) {
+        const QString path = u.isLocalFile() ? u.toLocalFile() : url;
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly)) {
+            if (error)
+                *error = file.errorString();
+            return false;
+        }
+        *out = file.readAll();
+        return true;
+    }
+
+    if (scheme != QLatin1String("http") && scheme != QLatin1String("https")) {
+        if (error)
+            *error = QStringLiteral("Unsupported URL scheme \"%1\"").arg(scheme);
+        return false;
+    }
+
+    QNetworkAccessManager manager;
+    QNetworkRequest request(u);
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
+                         QNetworkRequest::NoLessSafeRedirectPolicy);
+    QNetworkReply *reply = manager.get(request);
+
+    QEventLoop loop;
+    QTimer timeout;
+    timeout.setSingleShot(true);
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QObject::connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+    timeout.start(30000);
+    loop.exec();
+
+    if (!reply->isFinished()) {
+        reply->abort();
+        if (error)
+            *error = QStringLiteral("Timed out downloading %1").arg(url);
+        reply->deleteLater();
+        return false;
+    }
+    if (reply->error() != QNetworkReply::NoError) {
+        if (error)
+            *error = reply->errorString();
+        reply->deleteLater();
+        return false;
+    }
+    *out = reply->readAll();
+    reply->deleteLater();
+    return true;
+}
+
+} // namespace
 
 class FlatpakWorkerPrivate
 {
@@ -391,17 +462,16 @@ void FlatpakWorker::addRemote(const QString &name, const QString &url, bool gpgV
     // and let libflatpak build a fully configured remote (real repo URL, title,
     // GPG key, ...). This mirrors `flatpak remote-add <name> <url>`.
     if (url.endsWith(QLatin1String(".flatpakrepo"), Qt::CaseInsensitive)) {
-        g_autoptr(GFile) file = g_file_new_for_uri(url.toUtf8().constData());
-        g_autofree char *contents = nullptr;
-        gsize length = 0;
-        if (!g_file_load_contents(file, nullptr, &contents, &length, nullptr, &error)) {
+        QByteArray contents;
+        QString fetchError;
+        if (!readUri(url, &contents, &fetchError)) {
             Q_EMIT remoteOperationFinished(
                 false, QStringLiteral("add"), name,
-                error ? QString::fromUtf8(error->message)
-                      : QStringLiteral("Cannot download %1").arg(url));
+                fetchError.isEmpty() ? QStringLiteral("Cannot download %1").arg(url)
+                                     : fetchError);
             return;
         }
-        g_autoptr(GBytes) bytes = g_bytes_new(contents, length);
+        g_autoptr(GBytes) bytes = g_bytes_new(contents.constData(), contents.size());
         remote = flatpak_remote_new_from_file(name.toUtf8().constData(), bytes, &error);
     } else {
         remote = flatpak_remote_new(name.toUtf8().constData());
@@ -492,17 +562,18 @@ void FlatpakWorker::resolveFlatpakRef(const QString &url)
     }
 
     g_autoptr(GError) error = nullptr;
-    g_autoptr(GFile) file = g_file_new_for_uri(url.toUtf8().constData());
-    g_autofree char *contents = nullptr;
-    gsize length = 0;
-    if (!g_file_load_contents(file, nullptr, &contents, &length, nullptr, &error)) {
-        Q_EMIT flatpakRefFailed(url, error ? QString::fromUtf8(error->message)
-                                           : QStringLiteral("Cannot download %1").arg(url));
+    QByteArray contents;
+    QString fetchError;
+    if (!readUri(url, &contents, &fetchError)) {
+        Q_EMIT flatpakRefFailed(url, fetchError.isEmpty()
+                                         ? QStringLiteral("Cannot download %1").arg(url)
+                                         : fetchError);
         return;
     }
 
     g_autoptr(GKeyFile) keyFile = g_key_file_new();
-    if (!g_key_file_load_from_data(keyFile, contents, length, G_KEY_FILE_NONE, &error)) {
+    if (!g_key_file_load_from_data(keyFile, contents.constData(), contents.size(),
+                                   G_KEY_FILE_NONE, &error)) {
         Q_EMIT flatpakRefFailed(url, error ? QString::fromUtf8(error->message)
                                            : QStringLiteral("Invalid flatpakref: %1").arg(url));
         return;
