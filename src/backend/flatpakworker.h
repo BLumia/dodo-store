@@ -52,6 +52,12 @@ public:
                                const QString &arch, const QString &branch);
     Q_INVOKABLE void updateAll();
 
+    // Flatpak web-link support: fetch and parse a ".flatpakref" URL (as opened
+    // through the "flatpak+https" scheme) to the remote, app id and branch it
+    // points at. The referenced remote is added when not configured yet, so the
+    // app page can be shown for the ref.
+    Q_INVOKABLE void resolveFlatpakRef(const QString &url);
+
     // Request cancellation of the current blocking operation (thread-safe).
     void requestCancel();
 
@@ -69,6 +75,11 @@ Q_SIGNALS:
     void remoteOperationFinished(bool success, const QString &action,
                                  const QString &name, const QString &error);
     void operationFinished(const QString &ref, bool success, const QString &error);
+    // Result of resolveFlatpakRef(): the configured remote, app id and branch a
+    // ".flatpakref" link points at, or the reason it could not be resolved.
+    void flatpakRefResolved(const QString &remote, const QString &appId,
+                            const QString &branch);
+    void flatpakRefFailed(const QString &url, const QString &error);
     void progressChanged(double value);
     void statusChanged(const QString &status);
 

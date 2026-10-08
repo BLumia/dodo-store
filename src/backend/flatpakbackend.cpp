@@ -12,6 +12,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QMetaType>
+#include <QUrl>
 
 Q_DECLARE_METATYPE(QList<AppItem *>)
 
@@ -35,6 +36,10 @@ FlatpakBackend::FlatpakBackend(QObject *parent)
     connect(m_worker, &FlatpakWorker::remoteOperationFinished,
             this, &FlatpakBackend::onRemoteOperationFinished);
     connect(m_worker, &FlatpakWorker::operationFinished, this, &FlatpakBackend::onOperationFinished);
+    connect(m_worker, &FlatpakWorker::flatpakRefResolved,
+            this, &FlatpakBackend::onFlatpakRefResolved);
+    connect(m_worker, &FlatpakWorker::flatpakRefFailed,
+            this, &FlatpakBackend::onFlatpakRefFailed);
     connect(m_worker, &FlatpakWorker::progressChanged, this, &FlatpakBackend::onProgressChanged);
     connect(m_worker, &FlatpakWorker::statusChanged, this, &FlatpakBackend::onStatusChanged);
 
@@ -195,6 +200,76 @@ void FlatpakBackend::setRemoteEnabled(const QString &name, bool enabled)
                               Q_ARG(QString, name), Q_ARG(bool, enabled));
 }
 
+void FlatpakBackend::openFlatpakRefUrl(const QString &url)
+{
+    QString target = url.trimmed();
+    if (target.isEmpty())
+        return;
+
+    // "flatpak+https://..." / "flatpak+http://..." from the web-link handler.
+    if (target.startsWith(QLatin1String("flatpak+"), Qt::CaseInsensitive))
+        target = target.mid(8);
+    // A downloaded ".flatpakref" arrives as a local path; make it a file URI.
+    if (target.startsWith(QLatin1Char('/')))
+        target = QUrl::fromLocalFile(target).toString();
+
+    setBusy(true);
+    QMetaObject::invokeMethod(m_worker, "resolveFlatpakRef", Qt::QueuedConnection,
+                              Q_ARG(QString, target));
+}
+
+QObject *FlatpakBackend::findAppItem(const QString &appId, const QString &branch) const
+{
+    const QList<AppItem *> items = m_browseModel->items();
+    for (AppItem *item : items) {
+        if (item && item->appId() == appId && item->branch() == branch)
+            return item;
+    }
+    return nullptr;
+}
+
+QObject *FlatpakBackend::findAppByKey(const QString &key) const
+{
+    const AppListModel *models[] = { m_browseModel, m_installedModel, m_updatesModel };
+    for (const AppListModel *model : models) {
+        const QList<AppItem *> items = model->items();
+        for (AppItem *item : items) {
+            if (item && item->key() == key)
+                return item;
+        }
+    }
+    return nullptr;
+}
+
+void FlatpakBackend::onFlatpakRefResolved(const QString &remote, const QString &appId,
+                                          const QString &branch)
+{
+    setBusy(false);
+    if (m_currentRemote != remote) {
+        m_currentRemote = remote;
+        Q_EMIT currentRemoteChanged();
+    }
+
+    // The catalog may already hold the app (e.g. the link arrived while the
+    // store was open): navigate straight away, without reloading the remote.
+    if (findAppItem(appId, branch)) {
+        Q_EMIT openAppRequested(appId, branch);
+        return;
+    }
+
+    m_pendingOpenAppId = appId;
+    m_pendingOpenBranch = branch;
+    // Populate the remote's app list; onRemoteRefsReady() then emits
+    // openAppRequested() once the referenced app is actually present.
+    refreshBrowse();
+}
+
+void FlatpakBackend::onFlatpakRefFailed(const QString &url, const QString &error)
+{
+    setBusy(false);
+    Q_EMIT flatpakRefFailed(url, error);
+}
+
 void FlatpakBackend::onInstalledRefsReady(QList<AppItem *> items)
 {
     m_installedModel->clear();
@@ -257,6 +332,16 @@ void FlatpakBackend::onRemoteRefsReady(const QString &remote, QList<AppItem *> i
     enrichBatch(m_browseModel, 0);
     setBusy(false);
     Q_EMIT browseLoaded();
+
+    // A "flatpak+https" link is waiting for this remote's app list: now that
+    // the catalog is populated, hand the referenced app over to the UI.
+    if (!m_pendingOpenAppId.isEmpty()) {
+        const QString appId = m_pendingOpenAppId;
+        const QString branch = m_pendingOpenBranch;
+        m_pendingOpenAppId.clear();
+        m_pendingOpenBranch.clear();
+        Q_EMIT openAppRequested(appId, branch);
+    }
 }
 
 void FlatpakBackend::onOperationFinished(const QString &ref, bool success, const QString &error)

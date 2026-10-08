@@ -79,6 +79,18 @@ ApplicationWindow {
                 root.showToast(qsTr("Remote \"%1\" updated").arg(name))
             }
         }
+        // A "flatpak+https" web link resolved to an app: open its detail page.
+        function onOpenAppRequested(appId, branch) {
+            root.showPage(1)
+            var item = flatpakBackend.findAppItem(appId, branch)
+            if (item)
+                root.openDetail(item)
+            else
+                root.showToast(qsTr("Application not found in the selected source: %1").arg(appId))
+        }
+        function onFlatpakRefFailed(url, error) {
+            root.showToast(qsTr("Cannot open link: %1").arg(error))
+        }
     }
 
     header: TitleBar {

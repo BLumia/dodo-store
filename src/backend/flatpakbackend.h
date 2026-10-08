@@ -77,6 +77,22 @@ public:
     // Enrich an item's display metadata from AppStream (called after loading).
     Q_INVOKABLE void refreshMetadata();
 
+    // Flatpak web-link support. Accepts a "flatpak+https://..." URL (as opened
+    // by the x-scheme-handler/flatpak+https desktop entry), a plain http(s)
+    // URL, or a local path/URI to a ".flatpakref". The ref is resolved on the
+    // worker thread; when it names an app in the browse model,
+    // openAppRequested() is emitted so QML can show its detail page.
+    Q_INVOKABLE void openFlatpakRefUrl(const QString &url);
+
+    // Lookup by app id and branch in the browse model, used to navigate after
+    // resolving a web link. Returns nullptr when the app is not listed.
+    Q_INVOKABLE QObject *findAppItem(const QString &appId, const QString &branch) const;
+
+    // Lookup by AppItem::key() across the browse/installed/updates models.
+    // The detail page re-resolves its item through this after a model reload,
+    // because a reload deletes the AppItems it was opened with.
+    Q_INVOKABLE QObject *findAppByKey(const QString &key) const;
+
     // Lookup by AppItem::key() ("remote:appId:branch"). The detail page uses
     // these instead of holding on to an AppItem pointer, which the model may
     // delete when a refresh repopulates the lists.
@@ -97,6 +113,10 @@ Q_SIGNALS:
     // action is "add", "remove" or "modify".
     void remoteOperationFinished(bool success, const QString &action,
                                  const QString &name, const QString &error);
+    // Emitted once the app referenced by a "flatpak+https" link is present in
+    // the browse model, so QML can navigate to its detail page.
+    void openAppRequested(const QString &appId, const QString &branch);
+    void flatpakRefFailed(const QString &url, const QString &error);
 
 private Q_SLOTS:
     void onInstalledRefsReady(QList<AppItem *> items);
@@ -106,6 +126,9 @@ private Q_SLOTS:
     void onOperationFinished(const QString &ref, bool success, const QString &error);
     void onRemoteOperationFinished(bool success, const QString &action,
                                    const QString &name, const QString &error);
+    void onFlatpakRefResolved(const QString &remote, const QString &appId,
+                              const QString &branch);
+    void onFlatpakRefFailed(const QString &url, const QString &error);
     void onProgressChanged(double value);
     void onStatusChanged(const QString &status);
     void onAppStreamLoaded(bool success);
@@ -132,4 +155,9 @@ private:
     QString m_status;
 
     QList<AppItem *> m_pendingInstalled;
+
+    // Target of a pending "flatpak+https" link, awaited until the browse model
+    // for its remote has been populated.
+    QString m_pendingOpenAppId;
+    QString m_pendingOpenBranch;
 };

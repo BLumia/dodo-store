@@ -86,6 +86,28 @@ Item {
     Component.onCompleted: snapshot()
     onAppItemChanged: snapshot()
 
+    // Re-resolve the live model item for this app after any list reload. A
+    // reload deletes the AppItem the page was opened with (the model does
+    // qDeleteAll on clear), so without this the snapshot stays stale and the
+    // async AppStream metadata never reaches the page. Mirrors the key-based
+    // isInstalled()/hasUpdate() lookups.
+    function refreshFromBackend() {
+        if (appAppId.length === 0)
+            return
+        var live = flatpakBackend.findAppByKey(refKey())
+        if (live && live !== appItem)
+            appItem = live          // triggers onAppItemChanged -> snapshot()
+        else if (live)
+            snapshot()
+    }
+
+    Connections {
+        target: flatpakBackend
+        function onBrowseLoaded() { root.refreshFromBackend() }
+        function onInstalledLoaded() { root.refreshFromBackend() }
+        function onUpdatesLoaded() { root.refreshFromBackend() }
+    }
+
     // AppStream enrichment is asynchronous and may land after the page opened;
     // re-snapshot when the fields we display are updated.
     Connections {
@@ -98,6 +120,9 @@ Item {
         function onReleaseNotesChanged() { root.snapshot() }
         function onNameChanged() { root.snapshot() }
         function onSummaryChanged() { root.snapshot() }
+        function onIconChanged() { root.snapshot() }
+        function onVersionChanged() { root.snapshot() }
+        function onLicenseChanged() { root.snapshot() }
     }
 
     function fmtSize(bytes) {

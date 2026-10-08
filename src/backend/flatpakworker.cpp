@@ -17,6 +17,8 @@
 #include <QMetaType>
 #include <QSet>
 #include <QVariantMap>
+#include <QUrl>
+#include <QRegularExpression>
 #include <glib.h>
 #include <gio/gio.h>
 #include <flatpak.h>
@@ -420,6 +422,141 @@ void FlatpakWorker::addRemote(const QString &name, const QString &url, bool gpgV
     const gboolean ok = flatpak_installation_add_remote(inst, remote, TRUE, nullptr, &error);
     Q_EMIT remoteOperationFinished(ok, QStringLiteral("add"), name,
                                    error ? QString::fromUtf8(error->message) : QString());
+}
+
+namespace {
+
+// Repositories are compared with the trailing slash normalised away so
+// "https://dl.flathub.org/repo/" and "https://dl.flathub.org/repo" match.
+QString normalizeRepoUrl(const QString &url)
+{
+    QString s = url.trimmed();
+    while (s.endsWith(QLatin1Char('/')))
+        s.chop(1);
+    return s;
+}
+
+// Returns the name of a configured remote matching the ref's repository URL,
+// preferring @p suggestedName (typically "flathub") when it exists.
+QString findRemoteForRef(FlatpakInstallation *inst, const QString &refUrl,
+                         const QString &suggestedName)
+{
+    g_autoptr(GError) error = nullptr;
+    g_autoptr(GPtrArray) remotes = flatpak_installation_list_remotes(inst, nullptr, &error);
+    if (!remotes)
+        return QString();
+
+    if (!suggestedName.isEmpty()) {
+        for (guint i = 0; i < remotes->len; ++i) {
+            FlatpakRemote *r = static_cast<FlatpakRemote *>(g_ptr_array_index(remotes, i));
+            if (r && suggestedName == QString::fromUtf8(flatpak_remote_get_name(r)))
+                return suggestedName;
+        }
+    }
+
+    const QString target = normalizeRepoUrl(refUrl);
+    if (target.isEmpty())
+        return QString();
+    for (guint i = 0; i < remotes->len; ++i) {
+        FlatpakRemote *r = static_cast<FlatpakRemote *>(g_ptr_array_index(remotes, i));
+        if (!r)
+            continue;
+        g_autofree char *url = flatpak_remote_get_url(r);
+        if (url && normalizeRepoUrl(QString::fromUtf8(url))
+                       .compare(target, Qt::CaseInsensitive) == 0)
+            return QString::fromUtf8(flatpak_remote_get_name(r));
+    }
+    return QString();
+}
+
+// Derives a usable remote name from a repository URL when the ref carries no
+// SuggestRemoteName (e.g. "https://example.com/repo/" -> "example.com").
+QString deriveRemoteName(const QString &url)
+{
+    QString host = QUrl(url).host();
+    if (host.isEmpty())
+        host = QStringLiteral("flatpak-ref");
+    host.replace(QRegularExpression(QStringLiteral("[^A-Za-z0-9._-]")),
+                 QStringLiteral("-"));
+    return host;
+}
+
+} // namespace
+
+void FlatpakWorker::resolveFlatpakRef(const QString &url)
+{
+    FlatpakInstallation *inst = d->installation();
+    if (!inst) {
+        Q_EMIT flatpakRefFailed(url, QStringLiteral("Cannot open user installation"));
+        return;
+    }
+
+    g_autoptr(GError) error = nullptr;
+    g_autoptr(GFile) file = g_file_new_for_uri(url.toUtf8().constData());
+    g_autofree char *contents = nullptr;
+    gsize length = 0;
+    if (!g_file_load_contents(file, nullptr, &contents, &length, nullptr, &error)) {
+        Q_EMIT flatpakRefFailed(url, error ? QString::fromUtf8(error->message)
+                                           : QStringLiteral("Cannot download %1").arg(url));
+        return;
+    }
+
+    g_autoptr(GKeyFile) keyFile = g_key_file_new();
+    if (!g_key_file_load_from_data(keyFile, contents, length, G_KEY_FILE_NONE, &error)) {
+        Q_EMIT flatpakRefFailed(url, error ? QString::fromUtf8(error->message)
+                                           : QStringLiteral("Invalid flatpakref: %1").arg(url));
+        return;
+    }
+
+    g_autofree char *name = g_key_file_get_string(keyFile, "Flatpak Ref", "Name", nullptr);
+    g_autofree char *branch = g_key_file_get_string(keyFile, "Flatpak Ref", "Branch", nullptr);
+    g_autofree char *refUrl = g_key_file_get_string(keyFile, "Flatpak Ref", "Url", nullptr);
+    g_autofree char *suggested =
+        g_key_file_get_string(keyFile, "Flatpak Ref", "SuggestRemoteName", nullptr);
+    g_autofree char *gpgKey = g_key_file_get_string(keyFile, "Flatpak Ref", "GPGKey", nullptr);
+
+    if (!name || !refUrl) {
+        Q_EMIT flatpakRefFailed(url, QStringLiteral("Flatpakref is missing Name or Url"));
+        return;
+    }
+
+    const QString appId = QString::fromUtf8(name);
+    const QString appBranch = branch ? QString::fromUtf8(branch) : QStringLiteral("master");
+    const QString repoUrl = QString::fromUtf8(refUrl);
+    const QString suggestedName = suggested ? QString::fromUtf8(suggested) : QString();
+
+    QString remoteName = findRemoteForRef(inst, repoUrl, suggestedName);
+    if (remoteName.isEmpty()) {
+        remoteName = suggestedName.isEmpty() ? deriveRemoteName(repoUrl) : suggestedName;
+        g_autoptr(FlatpakRemote) remote = flatpak_remote_new(remoteName.toUtf8().constData());
+        if (!remote) {
+            Q_EMIT flatpakRefFailed(url, QStringLiteral("Invalid remote configuration"));
+            return;
+        }
+        flatpak_remote_set_url(remote, repoUrl.toUtf8().constData());
+        // The ref carries its GPG key base64-encoded; libflatpak expects the
+        // decoded bytes (cf. flatpak_dir_parse_flatpakref()).
+        gboolean verify = FALSE;
+        if (gpgKey) {
+            gsize decodedLen = 0;
+            g_autofree guchar *decoded = g_base64_decode(gpgKey, &decodedLen);
+            if (decodedLen >= 10) {
+                g_autoptr(GBytes) keyBytes = g_bytes_new(decoded, decodedLen);
+                flatpak_remote_set_gpg_key(remote, keyBytes);
+                verify = TRUE;
+            }
+        }
+        flatpak_remote_set_gpg_verify(remote, verify);
+        g_clear_error(&error);
+        if (!flatpak_installation_add_remote(inst, remote, TRUE, nullptr, &error)) {
+            Q_EMIT flatpakRefFailed(
+                url, error ? QString::fromUtf8(error->message)
+                           : QStringLiteral("Cannot add remote %1").arg(remoteName));
+            return;
+        }
+    }
+
+    Q_EMIT flatpakRefResolved(remoteName, appId, appBranch);
 }
 
 void FlatpakWorker::modifyRemote(const QString &name, const QString &title, const QString &url,
