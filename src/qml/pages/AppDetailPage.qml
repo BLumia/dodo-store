@@ -55,6 +55,7 @@ Item {
     // model count so it is re-evaluated (and re-queries the backend) every
     // time the lists are refreshed.
     readonly property bool installed: appAppId.length > 0
+        && flatpakBackend.installedModel.count >= 0
         && flatpakBackend.isInstalled(refKey())
     readonly property bool updateAvailable: appAppId.length > 0
         && flatpakBackend.updatesModel.count >= 0

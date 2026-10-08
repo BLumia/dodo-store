@@ -15,6 +15,7 @@
 #include <QCoreApplication>
 #include <QThread>
 #include <QMetaType>
+#include <QSet>
 #include <QVariantMap>
 #include <glib.h>
 #include <gio/gio.h>
@@ -30,8 +31,12 @@ public:
 
     FlatpakInstallation *installation();
     void setProgress(double value, const QString &status);
-    static void progressCallback(const char *status, unsigned int progress,
-                                 gboolean estimating, gpointer userData);
+    GCancellable *resetCancellable();
+
+    // Runs the prepared transaction and reports the overall result: success
+    // only when every operation (the requested ref plus any dependencies the
+    // transaction added) completed without error.
+    bool runTransaction(FlatpakTransaction *transaction, QString *errorOut);
 
     AppItem *makeInstalledItem(FlatpakInstalledRef *ref) const;
     AppItem *makeRemoteItem(FlatpakRemoteRef *ref, const QString &remote) const;
@@ -48,6 +53,10 @@ public:
     FlatpakWorker *q;
     FlatpakInstallation *inst = nullptr;
     GCancellable *cancellable = nullptr;
+
+    // State of the transaction currently being run (worker thread only).
+    QSet<QString> failedRefs;
+    QString lastOpError;
 
     mutable QMutex mutex;
     double progressValue = 0.0;
@@ -85,12 +94,102 @@ void FlatpakWorkerPrivate::setProgress(double value, const QString &status)
     }, Qt::QueuedConnection);
 }
 
-void FlatpakWorkerPrivate::progressCallback(const char *status, unsigned int progress,
-                                            gboolean estimating, gpointer userData)
+GCancellable *FlatpakWorkerPrivate::resetCancellable()
 {
-    FlatpakWorkerPrivate *d = static_cast<FlatpakWorkerPrivate *>(userData);
-    const QString s = status ? QString::fromUtf8(status) : QString();
-    d->setProgress(progress, s);
+    if (cancellable)
+        g_object_unref(cancellable);
+    cancellable = g_cancellable_new();
+    return cancellable;
+}
+
+// ---------------------------------------------------------------------------
+// FlatpakTransaction plumbing
+//
+// Install/update operations must go through FlatpakTransaction. The old
+// flatpak_installation_install_full()/update_full() APIs deploy only the
+// requested ref and never resolve its dependencies, leaving freshly installed
+// applications without their runtime (i.e. they cannot run). A transaction
+// resolves the ref's runtime, related refs etc. and queues them as extra
+// operations, all covered by one progress/error stream.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+void transactionProgressChanged(FlatpakTransactionProgress *progress, gpointer userData)
+{
+    auto *d = static_cast<FlatpakWorkerPrivate *>(userData);
+    g_autofree char *status = flatpak_transaction_progress_get_status(progress);
+    const int percent = flatpak_transaction_progress_get_progress(progress);
+    d->setProgress(percent, status ? QString::fromUtf8(status) : QString());
+}
+
+void transactionNewOperation(FlatpakTransaction *transaction,
+                             FlatpakTransactionOperation *operation,
+                             FlatpakTransactionProgress *progress, gpointer userData)
+{
+    Q_UNUSED(transaction);
+    auto *d = static_cast<FlatpakWorkerPrivate *>(userData);
+    // A transaction usually runs several operations (the requested ref plus
+    // its runtime and related refs); announce which one is starting.
+    const QString ref = QString::fromUtf8(flatpak_transaction_operation_get_ref(operation));
+    d->setProgress(0, ref);
+    g_signal_connect(progress, "changed", G_CALLBACK(transactionProgressChanged), d);
+}
+
+gboolean transactionOperationError(FlatpakTransaction *transaction,
+                                   FlatpakTransactionOperation *operation,
+                                   const GError *error, guint details, gpointer userData)
+{
+    Q_UNUSED(transaction);
+    Q_UNUSED(details);
+    auto *d = static_cast<FlatpakWorkerPrivate *>(userData);
+    const QString ref = QString::fromUtf8(flatpak_transaction_operation_get_ref(operation));
+    d->failedRefs.insert(ref);
+    d->lastOpError = error ? QString::fromUtf8(error->message)
+                           : QStringLiteral("unknown error");
+    qWarning() << "flatpak: transaction operation failed for" << ref << ":" << d->lastOpError;
+    // Keep going (updateAll batches several refs); the overall result is
+    // computed from failedRefs once the transaction finishes.
+    return TRUE;
+}
+
+gboolean transactionReady(FlatpakTransaction *transaction, gpointer userData)
+{
+    Q_UNUSED(transaction);
+    Q_UNUSED(userData);
+    return TRUE; // nothing to confirm, run the prepared operation list
+}
+
+} // namespace
+
+bool FlatpakWorkerPrivate::runTransaction(FlatpakTransaction *transaction, QString *errorOut)
+{
+    failedRefs.clear();
+    lastOpError.clear();
+    const gulong newOpHandler = g_signal_connect(transaction, "new-operation",
+                                                 G_CALLBACK(transactionNewOperation), this);
+    const gulong errorHandler = g_signal_connect(transaction, "operation-error",
+                                                 G_CALLBACK(transactionOperationError), this);
+    const gulong readyHandler = g_signal_connect(transaction, "ready",
+                                                 G_CALLBACK(transactionReady), this);
+
+    g_autoptr(GError) error = nullptr;
+    const bool ran = flatpak_transaction_run(transaction, cancellable, &error);
+
+    g_signal_handler_disconnect(transaction, newOpHandler);
+    g_signal_handler_disconnect(transaction, errorHandler);
+    g_signal_handler_disconnect(transaction, readyHandler);
+
+    const bool cancelled = g_cancellable_is_cancelled(cancellable);
+    if (errorOut) {
+        if (cancelled)
+            *errorOut = QStringLiteral("Cancelled");
+        else if (error)
+            *errorOut = QString::fromUtf8(error->message);
+        else if (!lastOpError.isEmpty())
+            *errorOut = lastOpError;
+    }
+    return ran && !cancelled && failedRefs.isEmpty();
 }
 
 QString FlatpakWorkerPrivate::refString(const QString &kind, const QString &name,
@@ -486,24 +585,27 @@ void FlatpakWorker::install(const QString &remote, const QString &kind, const QS
         return;
     }
 
-    if (d->cancellable)
-        g_object_unref(d->cancellable);
-    d->cancellable = g_cancellable_new();
-
-    const FlatpakRefKind refKind =
-        (kind == QLatin1String("runtime")) ? FLATPAK_REF_KIND_RUNTIME : FLATPAK_REF_KIND_APP;
+    d->resetCancellable();
 
     g_autoptr(GError) error = nullptr;
-    g_autoptr(FlatpakInstalledRef) result = flatpak_installation_install_full(
-        inst, FLATPAK_INSTALL_FLAGS_NONE, remote.toUtf8().constData(), refKind,
-        name.toUtf8().constData(), arch.toUtf8().constData(), branch.toUtf8().constData(),
-        nullptr, FlatpakWorkerPrivate::progressCallback, d.get(), d->cancellable, &error);
+    g_autoptr(FlatpakTransaction) transaction =
+        flatpak_transaction_new_for_installation(inst, d->cancellable, &error);
+    if (!transaction) {
+        Q_EMIT operationFinished(ref, false, QString::fromUtf8(error ? error->message : "unknown"));
+        return;
+    }
 
-    const bool ok = (result != nullptr);
-    const QString err = error ? QString::fromUtf8(error->message)
-                              : (g_cancellable_is_cancelled(d->cancellable)
-                                     ? QStringLiteral("Cancelled")
-                                     : QString());
+    // The transaction resolves the ref's runtime and other dependencies and
+    // queues them as additional operations, so the installed app can run.
+    if (!flatpak_transaction_add_install(transaction, remote.toUtf8().constData(),
+                                         ref.toUtf8().constData(), nullptr, &error)) {
+        Q_EMIT operationFinished(ref, false, QString::fromUtf8(error ? error->message : "unknown"));
+        return;
+    }
+
+    QString err;
+    const bool ok = d->runTransaction(transaction, &err);
+    d->setProgress(100, QString());
     Q_EMIT operationFinished(ref, ok, err);
 }
 
@@ -517,20 +619,24 @@ void FlatpakWorker::uninstall(const QString &kind, const QString &name,
         return;
     }
 
-    if (d->cancellable)
-        g_object_unref(d->cancellable);
-    d->cancellable = g_cancellable_new();
-
-    const FlatpakRefKind refKind =
-        (kind == QLatin1String("runtime")) ? FLATPAK_REF_KIND_RUNTIME : FLATPAK_REF_KIND_APP;
+    d->resetCancellable();
 
     g_autoptr(GError) error = nullptr;
-    gboolean ok = flatpak_installation_uninstall_full(
-        inst, FLATPAK_UNINSTALL_FLAGS_NONE, refKind, name.toUtf8().constData(),
-        arch.toUtf8().constData(), branch.toUtf8().constData(),
-        FlatpakWorkerPrivate::progressCallback, d.get(), d->cancellable, &error);
+    g_autoptr(FlatpakTransaction) transaction =
+        flatpak_transaction_new_for_installation(inst, d->cancellable, &error);
+    if (!transaction) {
+        Q_EMIT operationFinished(ref, false, QString::fromUtf8(error ? error->message : "unknown"));
+        return;
+    }
 
-    const QString err = error ? QString::fromUtf8(error->message) : QString();
+    if (!flatpak_transaction_add_uninstall(transaction, ref.toUtf8().constData(), &error)) {
+        Q_EMIT operationFinished(ref, false, QString::fromUtf8(error ? error->message : "unknown"));
+        return;
+    }
+
+    QString err;
+    const bool ok = d->runTransaction(transaction, &err);
+    d->setProgress(100, QString());
     Q_EMIT operationFinished(ref, ok, err);
 }
 
@@ -544,21 +650,27 @@ void FlatpakWorker::updateApp(const QString &kind, const QString &name,
         return;
     }
 
-    if (d->cancellable)
-        g_object_unref(d->cancellable);
-    d->cancellable = g_cancellable_new();
-
-    const FlatpakRefKind refKind =
-        (kind == QLatin1String("runtime")) ? FLATPAK_REF_KIND_RUNTIME : FLATPAK_REF_KIND_APP;
+    d->resetCancellable();
 
     g_autoptr(GError) error = nullptr;
-    g_autoptr(FlatpakInstalledRef) result = flatpak_installation_update_full(
-        inst, FLATPAK_UPDATE_FLAGS_NONE, refKind, name.toUtf8().constData(),
-        arch.toUtf8().constData(), branch.toUtf8().constData(), nullptr,
-        FlatpakWorkerPrivate::progressCallback, d.get(), d->cancellable, &error);
+    g_autoptr(FlatpakTransaction) transaction =
+        flatpak_transaction_new_for_installation(inst, d->cancellable, &error);
+    if (!transaction) {
+        Q_EMIT operationFinished(ref, false, QString::fromUtf8(error ? error->message : "unknown"));
+        return;
+    }
 
-    const bool ok = (result != nullptr);
-    const QString err = error ? QString::fromUtf8(error->message) : QString();
+    // Updating through a transaction also refreshes the ref's dependencies
+    // (runtime updates, related refs) instead of only the ref itself.
+    if (!flatpak_transaction_add_update(transaction, ref.toUtf8().constData(),
+                                        nullptr, nullptr, &error)) {
+        Q_EMIT operationFinished(ref, false, QString::fromUtf8(error ? error->message : "unknown"));
+        return;
+    }
+
+    QString err;
+    const bool ok = d->runTransaction(transaction, &err);
+    d->setProgress(100, QString());
     Q_EMIT operationFinished(ref, ok, err);
 }
 
@@ -570,9 +682,7 @@ void FlatpakWorker::updateAll()
         return;
     }
 
-    if (d->cancellable)
-        g_object_unref(d->cancellable);
-    d->cancellable = g_cancellable_new();
+    d->resetCancellable();
 
     g_autoptr(GError) error = nullptr;
     g_autoptr(GPtrArray) refs = flatpak_installation_list_installed_refs_for_update(
@@ -583,32 +693,32 @@ void FlatpakWorker::updateAll()
         return;
     }
 
-    bool anyFailed = false;
-    for (guint i = 0; i < refs->len; ++i) {
-        FlatpakInstalledRef *ref = static_cast<FlatpakInstalledRef *>(g_ptr_array_index(refs, i));
-        if (!ref)
-            continue;
-        const QString kind = flatpak_ref_get_kind(FLATPAK_REF(ref)) == FLATPAK_REF_KIND_RUNTIME
-                                 ? QStringLiteral("runtime") : QStringLiteral("app");
-        const QString name = QString::fromUtf8(flatpak_ref_get_name(FLATPAK_REF(ref)));
-        const QString arch = QString::fromUtf8(flatpak_ref_get_arch(FLATPAK_REF(ref)));
-        const QString branch = QString::fromUtf8(flatpak_ref_get_branch(FLATPAK_REF(ref)));
-
-        g_autoptr(GError) opError = nullptr;
-        g_autoptr(FlatpakInstalledRef) result = flatpak_installation_update_full(
-            inst, FLATPAK_UPDATE_FLAGS_NONE,
-            flatpak_ref_get_kind(FLATPAK_REF(ref)), name.toUtf8().constData(),
-            arch.toUtf8().constData(), branch.toUtf8().constData(), nullptr,
-            FlatpakWorkerPrivate::progressCallback, d.get(), d->cancellable, &opError);
-
-        if (!result) {
-            anyFailed = true;
-            qWarning() << "flatpak: update failed for" << name << ":"
-                       << (opError ? opError->message : "unknown");
-        }
-        if (g_cancellable_is_cancelled(d->cancellable))
-            break;
+    g_autoptr(FlatpakTransaction) transaction =
+        flatpak_transaction_new_for_installation(inst, d->cancellable, &error);
+    if (!transaction) {
+        Q_EMIT operationFinished(QString(), false,
+                                 QString::fromUtf8(error ? error->message : "unknown"));
+        return;
     }
 
-    Q_EMIT operationFinished(QString(), !anyFailed, QString());
+    // One transaction for the whole batch: dependencies are resolved once for
+    // all refs and every ref failure is reported through the same handler.
+    for (guint i = 0; i < refs->len; ++i) {
+        FlatpakRef *ref = static_cast<FlatpakRef *>(g_ptr_array_index(refs, i));
+        if (!ref)
+            continue;
+        g_autofree char *refStr = flatpak_ref_format_ref(ref);
+        if (!flatpak_transaction_add_update(transaction, refStr, nullptr, nullptr, &error)) {
+            Q_EMIT operationFinished(QString(), false,
+                                     QString::fromUtf8(error ? error->message : "unknown"));
+            return;
+        }
+    }
+
+    QString err;
+    bool ok = true;
+    if (refs->len > 0)
+        ok = d->runTransaction(transaction, &err);
+    d->setProgress(100, QString());
+    Q_EMIT operationFinished(QString(), ok, err);
 }
