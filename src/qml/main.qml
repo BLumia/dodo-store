@@ -227,7 +227,9 @@ ApplicationWindow {
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.name: modelData.icon
+                    icon.source: modelData.iconSource
+                    icon.width: 20
+                    icon.height: 20
                     checked: root.pageIndex === modelData.page
                     text: modelData.label
                     onClicked: root.showPage(modelData.page)
@@ -251,7 +253,9 @@ ApplicationWindow {
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.name: modelData.icon
+                    icon.source: modelData.iconSource
+                    icon.width: 20
+                    icon.height: 20
                     checked: root.pageIndex === modelData.page
                     text: modelData.label
                     onClicked: root.showPage(modelData.page)
