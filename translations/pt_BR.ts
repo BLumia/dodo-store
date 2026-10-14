@@ -66,5 +66,34 @@
     <message><source>Homepage:</source><translation>Site:</translation></message>
     <message><source>What's new</source><translation>Novidades</translation></message>
     <message><source>Click anywhere to close</source><translation>Clique em qualquer lugar para fechar</translation></message>
+    <message><source>Update</source><translation>Atualizar</translation></message>
+    <message><source>Uninstall</source><translation>Desinstalar</translation></message>
+</context>
+<context>
+    <name>RemotesPage</name>
+    <message><source>Remotes</source><translation>Repositórios</translation></message>
+    <message><source>Add remote</source><translation>Adicionar repositório</translation></message>
+    <message><source>Flatpak repositories the store browses and installs from. Disable a remote to stop using it without deleting it.</source><translation>Repositórios Flatpak usados pela loja para pesquisar e instalar aplicativos. Desative um repositório para deixar de usá-lo sem removê-lo.</translation></message>
+    <message><source>Disabled</source><translation>Desativado</translation></message>
+    <message><source>Enabled</source><translation>Ativado</translation></message>
+    <message><source>GPG verification</source><translation>Verificação GPG</translation></message>
+    <message><source>No GPG verification</source><translation>Sem verificação GPG</translation></message>
+    <message><source>Edit</source><translation>Editar</translation></message>
+    <message><source>Remove</source><translation>Remover</translation></message>
+    <message><source>No remotes configured.</source><translation>Nenhum repositório configurado.</translation></message>
+    <message><source>Remove remote</source><translation>Remover repositório</translation></message>
+    <message><source>Name</source><translation>Nome</translation></message>
+    <message><source>e.g. flathub</source><translation>Ex.: flathub</translation></message>
+    <message><source>URL</source><translation>URL</translation></message>
+    <message><source>https://flathub.org/repo/flathub.flatpakrepo</source><translation>https://flathub.org/repo/flathub.flatpakrepo</translation></message>
+    <message><source>Require GPG verification</source><translation>Exigir verificação GPG</translation></message>
+    <message><source>For a .flatpakrepo URL the GPG key is read from the file and this option is ignored.</source><translation>Em uma URL .flatpakrepo, a chave GPG é obtida do arquivo e esta opção é ignorada.</translation></message>
+    <message><source>Edit remote</source><translation>Editar repositório</translation></message>
+    <message><source>Title</source><translation>Título</translation></message>
+    <message><source>Display name</source><translation>Nome de exibição</translation></message>
+    <message><source>https://dl.flathub.org/repo/</source><translation>https://dl.flathub.org/repo/</translation></message>
+    <message><source>Hide apps from search and listings</source><translation>Ocultar aplicativos das pesquisas e listas</translation></message>
+    <message><source>Priority</source><translation>Prioridade</translation></message>
+    <message><source>Higher priority wins when two remotes provide the same app.</source><translation>Quando dois repositórios oferecem o mesmo aplicativo, o de maior prioridade tem preferência.</translation></message>
 </context>
 </TS>
