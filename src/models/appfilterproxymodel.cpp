@@ -56,16 +56,15 @@ void AppFilterProxyModel::setFeaturedAppIds(const QStringList &appIds)
 bool AppFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
     const QModelIndex idx = sourceModel()->index(sourceRow, 0, sourceParent);
-    const QString pattern = filterRegularExpression().pattern();
 
     // Searching always covers the full source catalog, not just featured apps.
-    if (!pattern.isEmpty()) {
+    if (!m_filterText.trimmed().isEmpty()) {
         const QString appId = idx.data(AppListModel::AppIdRole).toString();
         const QString name = idx.data(AppListModel::NameRole).toString();
         const QString summary = idx.data(AppListModel::SummaryRole).toString();
-        return appId.contains(pattern, Qt::CaseInsensitive)
-               || name.contains(filterRegularExpression())
-               || summary.contains(filterRegularExpression());
+        return appId.contains(m_filterText, Qt::CaseInsensitive)
+               || name.contains(m_filterText, Qt::CaseInsensitive)
+               || summary.contains(m_filterText, Qt::CaseInsensitive);
     }
 
     if (m_featuredOnly) {
