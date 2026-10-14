@@ -9,5 +9,6 @@
         <file>qml/pages/RemotesPage.qml</file>
         <file>qml/components/AppCard.qml</file>
         <file>qml/components/AppListItem.qml</file>
+        <file>qml/components/runtime.svg</file>
     </qresource>
 </RCC>
