@@ -105,7 +105,7 @@ Item {
 
             model: AppFilterProxyModel {
                 sourceModel: flatpakBackend.browseModel
-                filterText: root.searchText
+                filterText: root.searchText.trim()
                 featuredOnly: true
                 featuredAppIds: root.featuredAppIds
             }
