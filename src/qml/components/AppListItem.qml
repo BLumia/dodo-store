@@ -83,7 +83,7 @@ Rectangle {
         elide: Text.ElideRight
     }
 
-    Button {
+    StoreActionButton {
         id: actionBtn
         anchors.right: parent.right
         anchors.rightMargin: 16
