@@ -33,6 +33,9 @@ public:
     Q_INVOKABLE void loadRemotes();
     Q_INVOKABLE void loadUpdates();
 
+    // Install the Deepin GTK themes for this user in one transaction.
+    Q_INVOKABLE void installDefaultDeepinThemes();
+
     // Remote management (blocking, run on worker thread). @a url may point at a
     // plain repository directory or at a ".flatpakrepo" description file, which
     // is fetched and parsed so its URL, GPG key and metadata are applied.
