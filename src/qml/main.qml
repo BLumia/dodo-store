@@ -44,8 +44,8 @@ ApplicationWindow {
     function applyGlobalSearch(text) {
         while (mainStack.depth > 1)
             mainStack.pop()
-        root.pageIndex = 1
-        browsePage.searchText = text
+        root.pageIndex = 0
+        explorePage.searchText = text
     }
 
     function showPage(index) {
@@ -81,7 +81,7 @@ ApplicationWindow {
         }
         // A "flatpak+https" web link resolved to an app: open its detail page.
         function onOpenAppRequested(appId, branch) {
-            root.showPage(1)
+            root.showPage(0)
             var item = flatpakBackend.findAppItem(appId, branch)
             if (item)
                 root.openDetail(item)
@@ -195,8 +195,7 @@ ApplicationWindow {
 
             Repeater {
                 model: [
-                    { label: qsTr("Home"), icon: "go-home" },
-                    { label: qsTr("Browse"), icon: "view-grid" }
+                    { label: qsTr("Explore"), icon: "view-grid" }
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
@@ -220,8 +219,8 @@ ApplicationWindow {
 
             Repeater {
                 model: [
-                    { label: qsTr("Installed"), icon: "package-x-generic", page: 2 },
-                    { label: qsTr("Updates"), icon: "software-update-available", page: 3 }
+                    { label: qsTr("Installed"), icon: "package-x-generic", page: 1 },
+                    { label: qsTr("Updates"), icon: "software-update-available", page: 2 }
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
@@ -245,7 +244,7 @@ ApplicationWindow {
 
             Repeater {
                 model: [
-                    { label: qsTr("Remotes"), icon: "network-server", page: 4 }
+                    { label: qsTr("Remotes"), icon: "network-server", page: 3 }
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
@@ -269,11 +268,8 @@ ApplicationWindow {
                 id: tabLayout
                 currentIndex: root.pageIndex
 
-                HomePage {
-                    openDetail: function(item) { root.openDetail(item) }
-                }
-                BrowsePage {
-                    id: browsePage
+                ExplorePage {
+                    id: explorePage
                     openDetail: function(item) { root.openDetail(item) }
                 }
                 InstalledPage {
