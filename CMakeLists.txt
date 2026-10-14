@@ -7,7 +7,7 @@ set(CMAKE_AUTORCC ON)
 
 project(dodo-store
     VERSION 0.2.0
-    DESCRIPTION "A Flatpak GUI store built with Qt6, CMake, QML and DTK"
+    DESCRIPTION "A Flatpak GUI store built with Qt6, QML and DTK"
     LANGUAGES CXX
 )
 
@@ -21,6 +21,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Qml
     Quick
     QuickControls2
+    LinguistTools
 )
 
 find_package(Dtk${DTK_NAME_SUFFIX}Core REQUIRED)
@@ -50,6 +51,11 @@ add_executable(dodo-store
     src/models/appfilterproxymodel.cpp
 
     src/qml.qrc
+)
+
+qt_add_translations(dodo-store
+    TS_FILES translations/pt_BR.ts
+    RESOURCE_PREFIX "/i18n"
 )
 
 target_link_libraries(dodo-store PRIVATE
