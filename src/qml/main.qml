@@ -110,6 +110,17 @@ ApplicationWindow {
 
             Item { Layout.fillWidth: true }
 
+            // Do not clear focus when the user clicks inside the search field.
+            TapHandler {
+                acceptedButtons: Qt.LeftButton
+                onTapped: function(eventPoint, button) {
+                    const p = eventPoint.position
+                    if (p.x < searchField.x || p.x > searchField.x + searchField.width
+                            || p.y < searchField.y || p.y > searchField.y + searchField.height)
+                        searchField.focus = false
+                }
+            }
+
             SearchEdit {
                 id: searchField
                 Layout.preferredWidth: 320
