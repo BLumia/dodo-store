@@ -138,6 +138,7 @@ private:
     void fillInstalledModel(QList<AppItem *> items);
     void fillUpdatesModel();
     void enrichBatch(AppListModel *model, int from);
+    void loadBrowseRemote();
 
     QThread *m_thread = nullptr;
     FlatpakWorker *m_worker = nullptr;
@@ -150,6 +151,8 @@ private:
     QStringList m_remotes;
     QVariantList m_remotesInfo;
     QString m_currentRemote;
+    // Remote currently represented by m_browseModel; reuse it during this session.
+    QString m_loadedBrowseRemote;
     bool m_busy = false;
     double m_progress = 0.0;
     QString m_status;
