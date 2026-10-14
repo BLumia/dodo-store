@@ -111,9 +111,10 @@ ApplicationWindow {
             Item { Layout.fillWidth: true }
 
             SearchEdit {
+                id: searchField
                 Layout.preferredWidth: 320
                 Layout.alignment: Qt.AlignCenter
-                placeholder: qsTr("Search applications")
+                placeholder: qsTr("Pesquisar")
                 onTextChanged: root.applyGlobalSearch(text)
             }
 
@@ -175,6 +176,12 @@ ApplicationWindow {
 
     Item {
         anchors.fill: parent
+
+        // Clicking elsewhere in the window dismisses the search field focus.
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            onTapped: searchField.focus = false
+        }
 
         // Sidebar navigation, grouped like deepin-music's "Library"/"Playlists".
         ColumnLayout {
