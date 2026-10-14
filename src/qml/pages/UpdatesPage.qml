@@ -21,13 +21,17 @@ Item {
             spacing: 8
             Label {
                 Layout.fillWidth: true
-                text: qsTr("%1 available updates").arg(flatpakBackend.updatesModel.count)
+                text: qsTr("%1 application updates").arg(flatpakBackend.updatesModel.count)
+                      + (flatpakBackend.runtimeUpdatesModel.count > 0
+                         ? qsTr(" · %1 runtime updates").arg(flatpakBackend.runtimeUpdatesModel.count)
+                         : "")
                 font: DTK.fontManager.t8
                 color: palette.windowText
             }
             Button {
                 text: qsTr("Update All")
-                enabled: flatpakBackend.updatesModel.count > 0 && !flatpakBackend.busy
+                enabled: (flatpakBackend.updatesModel.count + flatpakBackend.runtimeUpdatesModel.count) > 0
+                         && !flatpakBackend.busy
                 onClicked: flatpakBackend.updateAll()
             }
             Button {
@@ -47,15 +51,24 @@ Item {
             visible: running
         }
 
+        Label {
+            visible: flatpakBackend.updatesModel.count > 0
+            Layout.fillWidth: true
+            text: qsTr("Applications")
+            font: DTK.fontManager.t6
+            color: palette.windowText
+        }
+
         ListView {
-            id: list
+            id: appList
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.minimumHeight: 0
             clip: true
             spacing: 4
             model: flatpakBackend.updatesModel
             delegate: AppListItem {
-                width: list.width
+                width: appList.width
                 actionText: qsTr("Update")
                 onClicked: {
                     if (root.openDetail)
@@ -66,7 +79,32 @@ Item {
         }
 
         Label {
-            visible: list.count === 0 && !flatpakBackend.busy
+            visible: flatpakBackend.runtimeUpdatesModel.count > 0
+            Layout.fillWidth: true
+            text: qsTr("Runtimes and dependencies")
+            font: DTK.fontManager.t6
+            color: palette.windowText
+        }
+
+        ListView {
+            id: runtimeList
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.min(contentHeight, 180)
+            visible: count > 0
+            clip: true
+            spacing: 4
+            model: flatpakBackend.runtimeUpdatesModel
+            delegate: AppListItem {
+                width: runtimeList.width
+                actionText: ""
+                onClicked: {}
+            }
+        }
+
+        Label {
+            visible: flatpakBackend.updatesModel.count === 0
+                     && flatpakBackend.runtimeUpdatesModel.count === 0
+                     && !flatpakBackend.busy
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("You're up to date.")
             color: palette.windowText
