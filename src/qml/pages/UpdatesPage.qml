@@ -62,7 +62,7 @@ Item {
         ListView {
             id: appList
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            Layout.preferredHeight: Math.min(contentHeight, 360)
             Layout.minimumHeight: 0
             clip: true
             spacing: 4
