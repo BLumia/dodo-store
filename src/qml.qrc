@@ -9,6 +9,7 @@
         <file>qml/pages/RemotesPage.qml</file>
         <file>qml/components/AppCard.qml</file>
         <file>qml/components/AppListItem.qml</file>
+        <file>qml/components/runtime.svg</file>
         <file>qml/icons/home.svg</file>
         <file>qml/icons/browse.svg</file>
         <file>qml/icons/installed.svg</file>
