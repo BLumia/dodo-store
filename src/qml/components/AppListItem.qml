@@ -35,7 +35,7 @@ Rectangle {
         Image {
             anchors.fill: parent
             anchors.margins: 6
-            source: model.icon
+            source: model.isRuntime ? "qrc:/qml/components/runtime.svg" : model.icon
             fillMode: Image.PreserveAspectFit
             sourceSize { width: 28; height: 28 }
         }
