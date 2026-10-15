@@ -14,10 +14,9 @@
 #include <QLocalSocket>
 #include <QStandardPaths>
 #include <QStringList>
-#include <QLocale>
-#include <QTranslator>
 
 #include <DLog>
+#include <DGuiApplicationHelper>
 
 #include "backend/flatpakbackend.h"
 #include "models/appfilterproxymodel.h"
@@ -62,12 +61,12 @@ int main(int argc, char *argv[])
 
     Dtk::Core::DLogManager::registerConsoleAppender();
 
-    // Load the Brazilian Portuguese translation when the system locale is pt_BR.
-    QTranslator translator;
-    if (QLocale::system().name().startsWith(QLatin1String("pt_BR"))
-        && translator.load(QStringLiteral(":/i18n/pt_BR.qm"))) {
-        app.installTranslator(&translator);
-    }
+    // UI translations. DGuiApplicationHelper::loadTranslator() loads Qt's own
+    // catalogs (qt/qtbase) and this application's catalog,
+    // "dodo-store_<locale>.qm", from <datadir>/dodo-store/translations (see the
+    // install rule in CMakeLists.txt), following the system locale and falling
+    // back to English when no catalog matches.
+    Dtk::Gui::DGuiApplicationHelper::loadTranslator();
 
     // A web link may target an already-running store: forward it and exit, so
     // the existing window navigates instead of a second window opening.
