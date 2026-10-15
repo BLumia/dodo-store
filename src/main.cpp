@@ -14,6 +14,8 @@
 #include <QLocalSocket>
 #include <QStandardPaths>
 #include <QStringList>
+#include <QLocale>
+#include <QTranslator>
 
 #include <DLog>
 
@@ -59,6 +61,13 @@ int main(int argc, char *argv[])
     app.setApplicationVersion("0.1.0");
 
     Dtk::Core::DLogManager::registerConsoleAppender();
+
+    // Load the Brazilian Portuguese translation when the system locale is pt_BR.
+    QTranslator translator;
+    if (QLocale::system().name().startsWith(QLatin1String("pt_BR"))
+        && translator.load(QStringLiteral(":/i18n/pt_BR.qm"))) {
+        app.installTranslator(&translator);
+    }
 
     // A web link may target an already-running store: forward it and exit, so
     // the existing window navigates instead of a second window opening.
