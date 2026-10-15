@@ -14,6 +14,7 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include <QThread>
+#include <QProcess>
 #include <QMetaType>
 #include <QSet>
 #include <QVariantMap>
@@ -90,6 +91,37 @@ bool readUri(const QString &url, QByteArray *out, QString *error)
     *out = reply->readAll();
     reply->deleteLater();
     return true;
+}
+
+ 
+// Mirrors `flatpak uninstall --user --unused -y` after a successful app
+// removal. Cleanup is best-effort: a cleanup failure must not turn a completed
+// uninstall into a failed operation.
+void cleanupUnusedRuntimes()
+{
+    QProcess process;
+    process.setProgram(QStringLiteral("flatpak"));
+    process.setArguments({QStringLiteral("uninstall"), QStringLiteral("--user"),
+                          QStringLiteral("--unused"), QStringLiteral("-y")});
+    process.start();
+
+    if (!process.waitForStarted()) {
+        qWarning() << "flatpak: cannot start unused-ref cleanup:" << process.errorString();
+        return;
+    }
+
+    if (!process.waitForFinished(-1)) {
+        qWarning() << "flatpak: unused-ref cleanup did not finish:" << process.errorString();
+        process.kill();
+        process.waitForFinished();
+        return;
+    }
+
+    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
+        const QString output = QString::fromLocal8Bit(process.readAllStandardError()).trimmed();
+        qWarning() << "flatpak: unused-ref cleanup failed with exit code"
+                   << process.exitCode() << (output.isEmpty() ? QString() : output);
+    }
 }
 
 } // namespace
@@ -845,6 +877,12 @@ void FlatpakWorker::uninstall(const QString &kind, const QString &name,
     QString err;
     const bool ok = d->runTransaction(transaction, &err);
     d->setProgress(100, QString());
+
+    // Run cleanup only after the requested uninstall succeeded. Its failure is
+    // logged but does not change the result of the uninstall itself.
+    if (ok)
+        cleanupUnusedRuntimes();
+
     Q_EMIT operationFinished(ref, ok, err);
 }
 
