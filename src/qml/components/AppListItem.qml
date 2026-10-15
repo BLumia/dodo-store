@@ -85,6 +85,9 @@ Rectangle {
 
     Button {
         id: actionBtn
+        // Keep the action button above the row-wide MouseArea so its click
+        // triggers the action instead of opening the app details.
+        z: 1
         anchors.right: parent.right
         anchors.rightMargin: 16
         anchors.verticalCenter: parent.verticalCenter
