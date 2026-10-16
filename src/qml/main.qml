@@ -110,10 +110,22 @@ ApplicationWindow {
 
             Item { Layout.fillWidth: true }
 
+            // Do not clear focus when the user clicks inside the search field.
+            TapHandler {
+                acceptedButtons: Qt.LeftButton
+                onTapped: function(eventPoint, button) {
+                    const p = eventPoint.position
+                    if (p.x < searchField.x || p.x > searchField.x + searchField.width
+                            || p.y < searchField.y || p.y > searchField.y + searchField.height)
+                        searchField.focus = false
+                }
+            }
+
             SearchEdit {
+                id: searchField
                 Layout.preferredWidth: 320
                 Layout.alignment: Qt.AlignCenter
-                placeholder: qsTr("Search applications")
+                placeholder: qsTr("Pesquisar")
                 onTextChanged: root.applyGlobalSearch(text)
             }
 
@@ -175,6 +187,12 @@ ApplicationWindow {
 
     Item {
         anchors.fill: parent
+
+        // Clicking elsewhere in the window dismisses the search field focus.
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            onTapped: searchField.focus = false
+        }
 
         // Sidebar navigation, grouped like deepin-music's "Library"/"Playlists".
         ColumnLayout {
