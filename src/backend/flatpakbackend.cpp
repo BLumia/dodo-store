@@ -95,6 +95,14 @@ void FlatpakBackend::refreshBrowse()
 {
     if (m_currentRemote.isEmpty())
         return;
+
+    // Reuse the loaded catalog when returning to the same remote. A pending
+    // flatpakref request bypasses the cache so its app can be resolved.
+    if (m_pendingOpenAppId.isEmpty()
+        && m_loadedBrowseRemote == m_currentRemote
+        && m_browseModel->count() > 0)
+        return;
+
     setBusy(true);
     QMetaObject::invokeMethod(m_worker, "loadRemote", Qt::QueuedConnection,
                               Q_ARG(QString, m_currentRemote));
@@ -320,16 +328,19 @@ void FlatpakBackend::onRemoteOperationFinished(bool success, const QString &acti
                                                const QString &name, const QString &error)
 {
     setBusy(false);
-    if (success)
+    if (success) {
+        // Remote changes may invalidate the cached catalog.
+        m_loadedBrowseRemote.clear();
         QMetaObject::invokeMethod(m_worker, "loadRemotes", Qt::QueuedConnection);
+    }
     Q_EMIT remoteOperationFinished(success, action, name, error);
 }
 
 void FlatpakBackend::onRemoteRefsReady(const QString &remote, QList<AppItem *> items)
 {
-    Q_UNUSED(remote)
     m_browseModel->clear();
     m_browseModel->appendItems(items);
+    m_loadedBrowseRemote = remote;
     enrichBatch(m_browseModel, 0);
     setBusy(false);
     Q_EMIT browseLoaded();

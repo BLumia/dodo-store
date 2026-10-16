@@ -150,6 +150,7 @@ private:
     QStringList m_remotes;
     QVariantList m_remotesInfo;
     QString m_currentRemote;
+    QString m_loadedBrowseRemote;
     bool m_busy = false;
     double m_progress = 0.0;
     QString m_status;
