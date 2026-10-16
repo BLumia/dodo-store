@@ -123,6 +123,9 @@ int main(int argc, char *argv[])
     });
     backend.refreshInstalled();
 
+    // Install the Deepin GTK themes for this user on the first launch.
+    backend.installDeepinGtkThemesIfNeeded();
+
     // Handle a link delivered with this (first) launch.
     if (!webLink.isEmpty())
         backend.openFlatpakRefUrl(webLink);
