@@ -35,7 +35,7 @@ Rectangle {
         Image {
             anchors.fill: parent
             anchors.margins: 6
-            source: model.icon
+            source: model.isRuntime ? "qrc:/qml/components/runtime.svg" : model.icon
             fillMode: Image.PreserveAspectFit
             sourceSize { width: 28; height: 28 }
         }
@@ -85,6 +85,9 @@ Rectangle {
 
     StoreActionButton {
         id: actionBtn
+        // Keep the action button above the row-wide MouseArea so its click
+        // triggers the action instead of opening the app details.
+        z: 1
         anchors.right: parent.right
         anchors.rightMargin: 16
         anchors.verticalCenter: parent.verticalCenter

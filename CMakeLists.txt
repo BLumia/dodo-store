@@ -7,7 +7,7 @@ set(CMAKE_AUTORCC ON)
 
 project(dodo-store
     VERSION 0.2.0
-    DESCRIPTION "A Flatpak GUI store built with Qt6, CMake, QML and DTK"
+    DESCRIPTION "A Flatpak GUI store built with Qt6, QML and DTK"
     LANGUAGES CXX
 )
 
@@ -21,6 +21,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Qml
     Quick
     QuickControls2
+    LinguistTools
 )
 
 find_package(Dtk${DTK_NAME_SUFFIX}Core REQUIRED)
@@ -51,6 +52,30 @@ add_executable(dodo-store
 
     src/qml.qrc
 )
+
+# Compile the .ts catalogs to .qm. They are installed as data files and loaded
+# at runtime by DGuiApplicationHelper::loadTranslator(), which searches
+# <datadir>/dodo-store/translations (and, for running from a build tree,
+# <applicationDirPath>/translations). Qt's own catalogs (qt/qtbase) are loaded
+# by the same call.
+qt_add_translations(dodo-store
+    TS_FILES
+        translations/dodo-store_pt_BR.ts
+        translations/dodo-store_zh_CN.ts
+    QM_FILES_OUTPUT_VARIABLE dodo_store_qm_files
+)
+add_dependencies(dodo-store ${PROJECT_NAME}_lrelease)
+
+install(FILES ${dodo_store_qm_files}
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/dodo-store/translations)
+
+# Make the catalogs discoverable when running straight from the build tree.
+add_custom_command(TARGET dodo-store POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${CMAKE_CURRENT_BINARY_DIR}/translations"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${dodo_store_qm_files} "${CMAKE_CURRENT_BINARY_DIR}/translations"
+    VERBATIM)
 
 target_link_libraries(dodo-store PRIVATE
     Qt${QT_VERSION_MAJOR}::Core
