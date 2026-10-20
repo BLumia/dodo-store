@@ -70,6 +70,11 @@
     </message>
     <message>
         <location filename="../src/qml/pages/AppDetailPage.qml" line="345"/>
+        <source>Open</source>
+        <translation>Abrir</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="345"/>
         <source>Uninstall</source>
         <translation>Desinstalar</translation>
     </message>
