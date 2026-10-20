@@ -233,6 +233,27 @@ ApplicationWindow {
                     checked: root.pageIndex === modelData.page
                     text: modelData.label
                     onClicked: root.showPage(modelData.page)
+
+                    Rectangle {
+                        id: updatesBadge
+                        visible: modelData.page === 3 && flatpakBackend.applicationUpdateCount > 0
+                        width: Math.max(18, updatesBadgeText.implicitWidth + 8)
+                        height: 18
+                        radius: 9
+                        color: "#d93025"
+                        anchors.right: parent.right
+                        anchors.rightMargin: 12
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Text {
+                            id: updatesBadgeText
+                            anchors.centerIn: parent
+                            text: flatpakBackend.applicationUpdateCount
+                            color: "#ffffff"
+                            font.pixelSize: 11
+                            font.bold: true
+                        }
+                    }
                 }
             }
 
