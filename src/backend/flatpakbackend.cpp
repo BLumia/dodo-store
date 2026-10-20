@@ -13,6 +13,7 @@
 #include <QDebug>
 #include <QMetaType>
 #include <QUrl>
+#include <QProcess>
 
 Q_DECLARE_METATYPE(QList<AppItem *>)
 
@@ -154,6 +155,23 @@ void FlatpakBackend::uninstallApp(const QString &appId, const QString &branch,
     QMetaObject::invokeMethod(m_worker, "uninstall", Qt::QueuedConnection,
                               Q_ARG(QString, QStringLiteral("app")), Q_ARG(QString, appId),
                               Q_ARG(QString, arch), Q_ARG(QString, branch));
+}
+
+void FlatpakBackend::launchApp(const QString &appId, const QString &branch,
+                               const QString &arch)
+{
+    if (appId.isEmpty())
+        return;
+
+    QStringList arguments{QStringLiteral("run")};
+    if (!branch.isEmpty())
+        arguments.append(QStringLiteral("--branch=%1").arg(branch));
+    if (!arch.isEmpty())
+        arguments.append(QStringLiteral("--arch=%1").arg(arch));
+    arguments.append(appId);
+
+    if (!QProcess::startDetached(QStringLiteral("flatpak"), arguments))
+        qWarning() << "flatpak: failed to launch app" << appId;
 }
 
 void FlatpakBackend::updateApp(const QString &appId, const QString &branch,
