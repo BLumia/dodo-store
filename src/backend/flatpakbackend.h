@@ -25,6 +25,7 @@ class FlatpakBackend : public QObject
     Q_PROPERTY(AppListModel *installedModel READ installedModel CONSTANT)
     Q_PROPERTY(AppListModel *browseModel READ browseModel CONSTANT)
     Q_PROPERTY(AppListModel *updatesModel READ updatesModel CONSTANT)
+    Q_PROPERTY(int applicationUpdateCount READ applicationUpdateCount NOTIFY updatesLoaded)
     Q_PROPERTY(QStringList remotes READ remotes NOTIFY remotesChanged)
     // Detailed view of the configured remotes (one map per remote) for the
     // remote management page: name, title, url, comment, description, homepage,
@@ -42,6 +43,7 @@ public:
     AppListModel *installedModel() const;
     AppListModel *browseModel() const;
     AppListModel *updatesModel() const;
+    int applicationUpdateCount() const;
     QStringList remotes() const;
     QVariantList remotesInfo() const;
     bool busy() const;
