@@ -60,6 +60,16 @@ AppListModel *FlatpakBackend::installedModel() const { return m_installedModel; 
 AppListModel *FlatpakBackend::browseModel() const { return m_browseModel; }
 AppListModel *FlatpakBackend::updatesModel() const { return m_updatesModel; }
 
+int FlatpakBackend::applicationUpdateCount() const
+{
+    int count = 0;
+    for (AppItem *item : m_updatesModel->items()) {
+        if (item && !item->isRuntime())
+            ++count;
+    }
+    return count;
+}
+
 QStringList FlatpakBackend::remotes() const { return m_remotes; }
 QVariantList FlatpakBackend::remotesInfo() const { return m_remotesInfo; }
 bool FlatpakBackend::busy() const { return m_busy; }
