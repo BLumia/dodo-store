@@ -61,6 +61,8 @@ public:
                                 const QString &branch, const QString &arch);
     Q_INVOKABLE void uninstallApp(const QString &appId, const QString &branch,
                                   const QString &arch);
+    Q_INVOKABLE void launchApp(const QString &appId, const QString &branch,
+                               const QString &arch);
     Q_INVOKABLE void updateApp(const QString &appId, const QString &branch,
                                const QString &arch);
     Q_INVOKABLE void updateAll();
