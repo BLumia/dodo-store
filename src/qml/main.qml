@@ -125,7 +125,7 @@ ApplicationWindow {
                 id: searchField
                 Layout.preferredWidth: 320
                 Layout.alignment: Qt.AlignCenter
-                placeholder: qsTr("Pesquisar")
+                placeholder: qsTr("Search applications")
                 onTextChanged: root.applyGlobalSearch(text)
             }
 
