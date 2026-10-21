@@ -13,7 +13,6 @@
 #include <QDebug>
 #include <QMetaType>
 #include <QUrl>
-#include <QProcess>
 
 Q_DECLARE_METATYPE(QList<AppItem *>)
 
@@ -37,6 +36,7 @@ FlatpakBackend::FlatpakBackend(QObject *parent)
     connect(m_worker, &FlatpakWorker::remoteOperationFinished,
             this, &FlatpakBackend::onRemoteOperationFinished);
     connect(m_worker, &FlatpakWorker::operationFinished, this, &FlatpakBackend::onOperationFinished);
+    connect(m_worker, &FlatpakWorker::launchFinished, this, &FlatpakBackend::onLaunchFinished);
     connect(m_worker, &FlatpakWorker::flatpakRefResolved,
             this, &FlatpakBackend::onFlatpakRefResolved);
     connect(m_worker, &FlatpakWorker::flatpakRefFailed,
@@ -173,15 +173,11 @@ void FlatpakBackend::launchApp(const QString &appId, const QString &branch,
     if (appId.isEmpty())
         return;
 
-    QStringList arguments{QStringLiteral("run")};
-    if (!branch.isEmpty())
-        arguments.append(QStringLiteral("--branch=%1").arg(branch));
-    if (!arch.isEmpty())
-        arguments.append(QStringLiteral("--arch=%1").arg(arch));
-    arguments.append(appId);
-
-    if (!QProcess::startDetached(QStringLiteral("flatpak"), arguments))
-        qWarning() << "flatpak: failed to launch app" << appId;
+    // Launching is quick and fire-and-forget, so it does not toggle `busy`;
+    // failures arrive asynchronously through launchFinished().
+    QMetaObject::invokeMethod(m_worker, "launch", Qt::QueuedConnection,
+                              Q_ARG(QString, appId), Q_ARG(QString, arch),
+                              Q_ARG(QString, branch));
 }
 
 void FlatpakBackend::updateApp(const QString &appId, const QString &branch,
@@ -389,6 +385,14 @@ void FlatpakBackend::onOperationFinished(const QString &ref, bool success, const
     setBusy(false);
     refreshInstalled();
     Q_EMIT operationFinished(ref, success, error);
+}
+
+void FlatpakBackend::onLaunchFinished(bool success, const QString &name,
+                                      const QString &error)
+{
+    if (!success)
+        qWarning() << "flatpak: failed to launch" << name << ":" << error;
+    Q_EMIT launchFinished(success, name, error);
 }
 
 void FlatpakBackend::onProgressChanged(double value)

@@ -70,12 +70,16 @@ install(FILES ${dodo_store_qm_files}
     DESTINATION ${CMAKE_INSTALL_DATADIR}/dodo-store/translations)
 
 # Make the catalogs discoverable when running straight from the build tree.
-add_custom_command(TARGET dodo-store POST_BUILD
+# A custom target (rather than POST_BUILD on the executable) re-copies them
+# whenever lrelease regenerates a .qm, without forcing a relink.
+add_custom_target(dodo-store-translations ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory
             "${CMAKE_CURRENT_BINARY_DIR}/translations"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${dodo_store_qm_files} "${CMAKE_CURRENT_BINARY_DIR}/translations"
-    VERBATIM)
+    DEPENDS ${dodo_store_qm_files}
+    COMMENT "Copying translation catalogs next to the binary")
+add_dependencies(dodo-store dodo-store-translations)
 
 target_link_libraries(dodo-store PRIVATE
     Qt${QT_VERSION_MAJOR}::Core

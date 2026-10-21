@@ -63,6 +63,8 @@ public:
                                 const QString &branch, const QString &arch);
     Q_INVOKABLE void uninstallApp(const QString &appId, const QString &branch,
                                   const QString &arch);
+    // Starts an installed app through libflatpak (asynchronously; the result is
+    // reported by launchFinished()).
     Q_INVOKABLE void launchApp(const QString &appId, const QString &branch,
                                const QString &arch);
     Q_INVOKABLE void updateApp(const QString &appId, const QString &branch,
@@ -114,6 +116,8 @@ Q_SIGNALS:
     void installedLoaded();
     void updatesLoaded();
     void operationFinished(const QString &ref, bool success, const QString &error);
+    // Result of launchApp(): the app has been started, or why it could not be.
+    void launchFinished(bool success, const QString &name, const QString &error);
     // action is "add", "remove" or "modify".
     void remoteOperationFinished(bool success, const QString &action,
                                  const QString &name, const QString &error);
@@ -128,6 +132,7 @@ private Q_SLOTS:
     void onUpdatesRefsReady(QList<AppItem *> items);
     void onRemotesReady(const QVariantList &remotes);
     void onOperationFinished(const QString &ref, bool success, const QString &error);
+    void onLaunchFinished(bool success, const QString &name, const QString &error);
     void onRemoteOperationFinished(bool success, const QString &action,
                                    const QString &name, const QString &error);
     void onFlatpakRefResolved(const QString &remote, const QString &appId,

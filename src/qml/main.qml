@@ -79,6 +79,10 @@ ApplicationWindow {
                 root.showToast(qsTr("Remote \"%1\" updated").arg(name))
             }
         }
+        function onLaunchFinished(success, name, error) {
+            if (!success)
+                root.showToast(qsTr("Failed to open %1: %2").arg(name).arg(error))
+        }
         // A "flatpak+https" web link resolved to an app: open its detail page.
         function onOpenAppRequested(appId, branch) {
             root.showPage(1)
