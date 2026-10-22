@@ -16,6 +16,7 @@
 #include <QStringList>
 
 #include <DLog>
+#include <DGuiApplicationHelper>
 
 #include "backend/flatpakbackend.h"
 #include "models/appfilterproxymodel.h"
@@ -59,6 +60,13 @@ int main(int argc, char *argv[])
     app.setApplicationVersion("0.1.0");
 
     Dtk::Core::DLogManager::registerConsoleAppender();
+
+    // UI translations. DGuiApplicationHelper::loadTranslator() loads Qt's own
+    // catalogs (qt/qtbase) and this application's catalog,
+    // "dodo-store_<locale>.qm", from <datadir>/dodo-store/translations (see the
+    // install rule in CMakeLists.txt), following the system locale and falling
+    // back to English when no catalog matches.
+    Dtk::Gui::DGuiApplicationHelper::loadTranslator();
 
     // A web link may target an already-running store: forward it and exit, so
     // the existing window navigates instead of a second window opening.
