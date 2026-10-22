@@ -36,6 +36,7 @@ FlatpakBackend::FlatpakBackend(QObject *parent)
     connect(m_worker, &FlatpakWorker::remoteOperationFinished,
             this, &FlatpakBackend::onRemoteOperationFinished);
     connect(m_worker, &FlatpakWorker::operationFinished, this, &FlatpakBackend::onOperationFinished);
+    connect(m_worker, &FlatpakWorker::launchFinished, this, &FlatpakBackend::onLaunchFinished);
     connect(m_worker, &FlatpakWorker::flatpakRefResolved,
             this, &FlatpakBackend::onFlatpakRefResolved);
     connect(m_worker, &FlatpakWorker::flatpakRefFailed,
@@ -59,6 +60,16 @@ FlatpakBackend::~FlatpakBackend()
 AppListModel *FlatpakBackend::installedModel() const { return m_installedModel; }
 AppListModel *FlatpakBackend::browseModel() const { return m_browseModel; }
 AppListModel *FlatpakBackend::updatesModel() const { return m_updatesModel; }
+
+int FlatpakBackend::applicationUpdateCount() const
+{
+    int count = 0;
+    for (AppItem *item : m_updatesModel->items()) {
+        if (item && !item->isRuntime())
+            ++count;
+    }
+    return count;
+}
 
 QStringList FlatpakBackend::remotes() const { return m_remotes; }
 QVariantList FlatpakBackend::remotesInfo() const { return m_remotesInfo; }
@@ -96,9 +107,12 @@ void FlatpakBackend::refreshBrowse()
     if (m_currentRemote.isEmpty())
         return;
 
-    // Reuse the current catalog instead of repeating blocking libflatpak
-    // enumeration when Explore is revisited or the same source is reselected.
-    if (m_loadedBrowseRemote == m_currentRemote && m_browseModel->count() > 0)
+
+    // Reuse the loaded catalog when returning to the same remote.
+    // A pending flatpakref request bypasses the cache so its app can be resolved.
+    if (m_pendingOpenAppId.isEmpty()
+        && m_loadedBrowseRemote == m_currentRemote
+        && m_browseModel->count() > 0)
         return;
 
     loadBrowseRemote();
@@ -108,6 +122,7 @@ void FlatpakBackend::loadBrowseRemote()
 {
     if (m_currentRemote.isEmpty())
         return;
+
     setBusy(true);
     QMetaObject::invokeMethod(m_worker, "loadRemote", Qt::QueuedConnection,
                               Q_ARG(QString, m_currentRemote));
@@ -159,6 +174,19 @@ void FlatpakBackend::uninstallApp(const QString &appId, const QString &branch,
     QMetaObject::invokeMethod(m_worker, "uninstall", Qt::QueuedConnection,
                               Q_ARG(QString, QStringLiteral("app")), Q_ARG(QString, appId),
                               Q_ARG(QString, arch), Q_ARG(QString, branch));
+}
+
+void FlatpakBackend::launchApp(const QString &appId, const QString &branch,
+                               const QString &arch)
+{
+    if (appId.isEmpty())
+        return;
+
+    // Launching is quick and fire-and-forget, so it does not toggle `busy`;
+    // failures arrive asynchronously through launchFinished().
+    QMetaObject::invokeMethod(m_worker, "launch", Qt::QueuedConnection,
+                              Q_ARG(QString, appId), Q_ARG(QString, arch),
+                              Q_ARG(QString, branch));
 }
 
 void FlatpakBackend::updateApp(const QString &appId, const QString &branch,
@@ -335,7 +363,9 @@ void FlatpakBackend::onRemoteOperationFinished(bool success, const QString &acti
 {
     setBusy(false);
     if (success) {
+
         // Changes to configured remotes can invalidate the loaded catalog.
+
         m_loadedBrowseRemote.clear();
         QMetaObject::invokeMethod(m_worker, "loadRemotes", Qt::QueuedConnection);
     }
@@ -367,6 +397,14 @@ void FlatpakBackend::onOperationFinished(const QString &ref, bool success, const
     setBusy(false);
     refreshInstalled();
     Q_EMIT operationFinished(ref, success, error);
+}
+
+void FlatpakBackend::onLaunchFinished(bool success, const QString &name,
+                                      const QString &error)
+{
+    if (!success)
+        qWarning() << "flatpak: failed to launch" << name << ":" << error;
+    Q_EMIT launchFinished(success, name, error);
 }
 
 void FlatpakBackend::onProgressChanged(double value)
