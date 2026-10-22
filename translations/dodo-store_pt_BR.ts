@@ -19,47 +19,47 @@
         <translation>Instalar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="383"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="410"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="408"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="435"/>
         <source>Category</source>
         <translation>Categoria</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="409"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="436"/>
         <source>Package</source>
         <translation>Pacote</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="410"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="437"/>
         <source>Size</source>
         <translation>Tamanho</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="411"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="438"/>
         <source>Version</source>
         <translation>Versão</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="412"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="439"/>
         <source>Developer</source>
         <translation>Desenvolvedor</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="567"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="594"/>
         <source>Homepage:</source>
         <translation>Site:</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="605"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="632"/>
         <source>What&apos;s new</source>
         <translation>Novidades</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="650"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="677"/>
         <source>Click anywhere to close</source>
         <translation>Clique em qualquer lugar para fechar</translation>
     </message>
@@ -69,7 +69,12 @@
         <translation>Atualizar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="345"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="347"/>
+        <source>Open</source>
+        <translation>Abrir</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="372"/>
         <source>Uninstall</source>
         <translation>Desinstalar</translation>
     </message>
@@ -199,7 +204,7 @@
     <message>
         <location filename="../src/qml/pages/RemotesPage.qml" line="182"/>
         <source>Remove the remote &quot;%1&quot;? Applications installed from it are kept, but will no longer receive updates from it.</source>
-        <translation>Remover o repositório "%1"? Os aplicativos instalados a partir dele são mantidos, mas não receberão mais atualizações dele.</translation>
+        <translation>Remover o repositório &quot;%1&quot;? Os aplicativos instalados a partir dele são mantidos, mas não receberão mais atualizações dele.</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/RemotesPage.qml" line="207"/>
@@ -241,7 +246,7 @@
     <message>
         <location filename="../src/qml/pages/RemotesPage.qml" line="298"/>
         <source>Editing &quot;%1&quot;</source>
-        <translation>Editando "%1"</translation>
+        <translation>Editando &quot;%1&quot;</translation>
     </message>
     <message>
         <location filename="../src/qml/pages/RemotesPage.qml" line="306"/>
@@ -311,7 +316,7 @@
     <name>main</name>
     <message>
         <location filename="../src/qml/main.qml" line="23"/>
-        <location filename="../src/qml/main.qml" line="124"/>
+        <location filename="../src/qml/main.qml" line="140"/>
         <source>Dodo Store</source>
         <translation>Dodo Store</translation>
     </message>
@@ -346,67 +351,72 @@
         <translation>Repositório &quot;%1&quot; atualizado</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="89"/>
+        <location filename="../src/qml/main.qml" line="84"/>
+        <source>Failed to open %1: %2</source>
+        <translation>Falha ao abrir %1: %2</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/main.qml" line="93"/>
         <source>Application not found in the selected source: %1</source>
         <translation>Aplicativo não encontrado na fonte selecionada: %1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="92"/>
+        <location filename="../src/qml/main.qml" line="96"/>
         <source>Cannot open link: %1</source>
         <translation>Não foi possível abrir o link: %1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="116"/>
+        <location filename="../src/qml/main.qml" line="132"/>
         <source>Search applications</source>
         <translation>Pesquisar aplicativos</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="126"/>
+        <location filename="../src/qml/main.qml" line="142"/>
         <source>A Flatpak graphical application store built with Qt6, CMake, QML and DTK.</source>
         <translation>Uma loja gráfica de aplicativos Flatpak desenvolvida com Qt 6, CMake, QML e DTK.</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="129"/>
+        <location filename="../src/qml/main.qml" line="145"/>
         <source>Released under LGPL-3.0-or-later.</source>
         <translation>Distribuído sob a licença LGPL-3.0 ou posterior.</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="188"/>
+        <location filename="../src/qml/main.qml" line="210"/>
         <source>Store</source>
         <translation>Loja</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="198"/>
+        <location filename="../src/qml/main.qml" line="220"/>
         <source>Home</source>
         <translation>Página Inicial</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="199"/>
+        <location filename="../src/qml/main.qml" line="221"/>
         <source>Browse</source>
         <translation>Navegar</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="215"/>
+        <location filename="../src/qml/main.qml" line="237"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="225"/>
+        <location filename="../src/qml/main.qml" line="247"/>
         <source>Installed</source>
         <translation>Instalados</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="226"/>
+        <location filename="../src/qml/main.qml" line="248"/>
         <source>Updates</source>
         <translation>Atualizações</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="242"/>
+        <location filename="../src/qml/main.qml" line="285"/>
         <source>Settings</source>
         <translation>Configurações</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="252"/>
+        <location filename="../src/qml/main.qml" line="295"/>
         <source>Remotes</source>
         <translation>Repositórios</translation>
     </message>

@@ -25,6 +25,7 @@ class FlatpakBackend : public QObject
     Q_PROPERTY(AppListModel *installedModel READ installedModel CONSTANT)
     Q_PROPERTY(AppListModel *browseModel READ browseModel CONSTANT)
     Q_PROPERTY(AppListModel *updatesModel READ updatesModel CONSTANT)
+    Q_PROPERTY(int applicationUpdateCount READ applicationUpdateCount NOTIFY updatesLoaded)
     Q_PROPERTY(QStringList remotes READ remotes NOTIFY remotesChanged)
     // Detailed view of the configured remotes (one map per remote) for the
     // remote management page: name, title, url, comment, description, homepage,
@@ -42,6 +43,7 @@ public:
     AppListModel *installedModel() const;
     AppListModel *browseModel() const;
     AppListModel *updatesModel() const;
+    int applicationUpdateCount() const;
     QStringList remotes() const;
     QVariantList remotesInfo() const;
     bool busy() const;
@@ -61,6 +63,10 @@ public:
                                 const QString &branch, const QString &arch);
     Q_INVOKABLE void uninstallApp(const QString &appId, const QString &branch,
                                   const QString &arch);
+    // Starts an installed app through libflatpak (asynchronously; the result is
+    // reported by launchFinished()).
+    Q_INVOKABLE void launchApp(const QString &appId, const QString &branch,
+                               const QString &arch);
     Q_INVOKABLE void updateApp(const QString &appId, const QString &branch,
                                const QString &arch);
     Q_INVOKABLE void updateAll();
@@ -110,6 +116,8 @@ Q_SIGNALS:
     void installedLoaded();
     void updatesLoaded();
     void operationFinished(const QString &ref, bool success, const QString &error);
+    // Result of launchApp(): the app has been started, or why it could not be.
+    void launchFinished(bool success, const QString &name, const QString &error);
     // action is "add", "remove" or "modify".
     void remoteOperationFinished(bool success, const QString &action,
                                  const QString &name, const QString &error);
@@ -124,6 +132,7 @@ private Q_SLOTS:
     void onUpdatesRefsReady(QList<AppItem *> items);
     void onRemotesReady(const QVariantList &remotes);
     void onOperationFinished(const QString &ref, bool success, const QString &error);
+    void onLaunchFinished(bool success, const QString &name, const QString &error);
     void onRemoteOperationFinished(bool success, const QString &action,
                                    const QString &name, const QString &error);
     void onFlatpakRefResolved(const QString &remote, const QString &appId,

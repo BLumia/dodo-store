@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" sourcelanguage="en_US" language="zh_CN">
+<TS version="2.1" language="zh_CN" sourcelanguage="en_US">
 <context>
     <name>AppDetailPage</name>
     <message>
@@ -24,52 +24,57 @@
         <translation>安装</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="345"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="347"/>
+        <source>Open</source>
+        <translation>打开</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="372"/>
         <source>Uninstall</source>
         <translation>卸载</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="383"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="410"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="408"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="435"/>
         <source>Category</source>
         <translation>分类</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="409"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="436"/>
         <source>Package</source>
         <translation>包名</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="410"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="437"/>
         <source>Size</source>
         <translation>大小</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="411"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="438"/>
         <source>Version</source>
         <translation>版本</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="412"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="439"/>
         <source>Developer</source>
         <translation>开发者</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="567"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="594"/>
         <source>Homepage:</source>
         <translation>主页：</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="605"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="632"/>
         <source>What&apos;s new</source>
         <translation>新特性</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="650"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="677"/>
         <source>Click anywhere to close</source>
         <translation>点击任意位置关闭</translation>
     </message>
@@ -311,7 +316,7 @@
     <name>main</name>
     <message>
         <location filename="../src/qml/main.qml" line="23"/>
-        <location filename="../src/qml/main.qml" line="124"/>
+        <location filename="../src/qml/main.qml" line="140"/>
         <source>Dodo Store</source>
         <translation>Dodo 应用商店</translation>
     </message>
@@ -346,67 +351,72 @@
         <translation>已更新远程源“%1”</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="89"/>
+        <location filename="../src/qml/main.qml" line="84"/>
+        <source>Failed to open %1: %2</source>
+        <translation>无法打开 %1：%2</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/main.qml" line="93"/>
         <source>Application not found in the selected source: %1</source>
         <translation>在所选的来源中未找到应用：%1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="92"/>
+        <location filename="../src/qml/main.qml" line="96"/>
         <source>Cannot open link: %1</source>
         <translation>无法打开链接：%1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="116"/>
+        <location filename="../src/qml/main.qml" line="132"/>
         <source>Search applications</source>
         <translation>搜索应用</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="126"/>
+        <location filename="../src/qml/main.qml" line="142"/>
         <source>A Flatpak graphical application store built with Qt6, CMake, QML and DTK.</source>
         <translation>一款使用 Qt6、CMake、QML 和 DTK 构建的 Flatpak 图形化应用商店。</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="129"/>
+        <location filename="../src/qml/main.qml" line="145"/>
         <source>Released under LGPL-3.0-or-later.</source>
         <translation>以 LGPL-3.0-or-later 许可证发布。</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="188"/>
+        <location filename="../src/qml/main.qml" line="210"/>
         <source>Store</source>
         <translation>商店</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="198"/>
+        <location filename="../src/qml/main.qml" line="220"/>
         <source>Home</source>
         <translation>首页</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="199"/>
+        <location filename="../src/qml/main.qml" line="221"/>
         <source>Browse</source>
         <translation>浏览</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="215"/>
+        <location filename="../src/qml/main.qml" line="237"/>
         <source>Library</source>
         <translation>应用库</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="225"/>
+        <location filename="../src/qml/main.qml" line="247"/>
         <source>Installed</source>
         <translation>已安装</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="226"/>
+        <location filename="../src/qml/main.qml" line="248"/>
         <source>Updates</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="242"/>
+        <location filename="../src/qml/main.qml" line="285"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="252"/>
+        <location filename="../src/qml/main.qml" line="295"/>
         <source>Remotes</source>
         <translation>远程源</translation>
     </message>
