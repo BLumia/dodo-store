@@ -14,19 +14,29 @@ class AppFilterProxyModel : public QSortFilterProxyModel
 {
     Q_OBJECT
     Q_PROPERTY(QString filterText READ filterText WRITE setFilterText NOTIFY filterTextChanged)
+    Q_PROPERTY(bool hideRuntimes READ hideRuntimes WRITE setHideRuntimes NOTIFY hideRuntimesChanged)
+    // rowCount() is a Q_INVOKABLE method, not a bindable property; expose a
+    // plain count of the filtered rows for QML (e.g. "N applications installed").
+    Q_PROPERTY(int count READ count NOTIFY countChanged)
 
 public:
     explicit AppFilterProxyModel(QObject *parent = nullptr);
 
     QString filterText() const;
     void setFilterText(const QString &text);
+    bool hideRuntimes() const;
+    void setHideRuntimes(bool hide);
+    int count() const;
 
 Q_SIGNALS:
     void filterTextChanged();
+    void hideRuntimesChanged();
+    void countChanged();
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
 
 private:
     QString m_filterText;
+    bool m_hideRuntimes = false;
 };

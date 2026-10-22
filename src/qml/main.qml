@@ -79,6 +79,10 @@ ApplicationWindow {
                 root.showToast(qsTr("Remote \"%1\" updated").arg(name))
             }
         }
+        function onLaunchFinished(success, name, error) {
+            if (!success)
+                root.showToast(qsTr("Failed to open %1: %2").arg(name).arg(error))
+        }
         // A "flatpak+https" web link resolved to an app: open its detail page.
         function onOpenAppRequested(appId, branch) {
             root.showPage(1)
@@ -110,7 +114,19 @@ ApplicationWindow {
 
             Item { Layout.fillWidth: true }
 
+            // Do not clear focus when the user clicks inside the search field.
+            TapHandler {
+                acceptedButtons: Qt.LeftButton
+                onTapped: function(eventPoint, button) {
+                    const p = eventPoint.position
+                    if (p.x < searchField.x || p.x > searchField.x + searchField.width
+                            || p.y < searchField.y || p.y > searchField.y + searchField.height)
+                        searchField.focus = false
+                }
+            }
+
             SearchEdit {
+                id: searchField
                 Layout.preferredWidth: 320
                 Layout.alignment: Qt.AlignCenter
                 placeholder: qsTr("Search applications")
@@ -176,6 +192,12 @@ ApplicationWindow {
     Item {
         anchors.fill: parent
 
+        // Clicking elsewhere in the window dismisses the search field focus.
+        TapHandler {
+            acceptedButtons: Qt.LeftButton
+            onTapped: searchField.focus = false
+        }
+
         // Sidebar navigation, grouped like deepin-music's "Library"/"Playlists".
         ColumnLayout {
             width: 220
@@ -195,12 +217,14 @@ ApplicationWindow {
 
             Repeater {
                 model: [
-                    { label: qsTr("Home"), icon: "go-home" },
-                    { label: qsTr("Browse"), icon: "view-grid" }
+                    { label: qsTr("Home"), iconSource: "qrc:/qml/icons/home.svg" },
+                    { label: qsTr("Browse"), iconSource: "qrc:/qml/icons/browse.svg" }
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.name: modelData.icon
+                    icon.source: modelData.iconSource
+                    icon.width: 20
+                    icon.height: 20
                     checked: root.pageIndex === index
                     text: modelData.label
                     onClicked: root.showPage(index)
@@ -220,15 +244,38 @@ ApplicationWindow {
 
             Repeater {
                 model: [
-                    { label: qsTr("Installed"), icon: "package-x-generic", page: 2 },
-                    { label: qsTr("Updates"), icon: "software-update-available", page: 3 }
+                    { label: qsTr("Installed"), iconSource: "qrc:/qml/icons/installed.svg", page: 2 },
+                    { label: qsTr("Updates"), iconSource: "qrc:/qml/icons/updates.svg", page: 3 }
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.name: modelData.icon
+                    icon.source: modelData.iconSource
+                    icon.width: 20
+                    icon.height: 20
                     checked: root.pageIndex === modelData.page
                     text: modelData.label
                     onClicked: root.showPage(modelData.page)
+
+                    Rectangle {
+                        id: updatesBadge
+                        visible: modelData.page === 3 && flatpakBackend.applicationUpdateCount > 0
+                        width: Math.max(18, updatesBadgeText.implicitWidth + 8)
+                        height: 18
+                        radius: 9
+                        color: "#d93025"
+                        anchors.right: parent.right
+                        anchors.rightMargin: 12
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Text {
+                            id: updatesBadgeText
+                            anchors.centerIn: parent
+                            text: flatpakBackend.applicationUpdateCount
+                            color: "#ffffff"
+                            font.pixelSize: 11
+                            font.bold: true
+                        }
+                    }
                 }
             }
 
@@ -245,11 +292,13 @@ ApplicationWindow {
 
             Repeater {
                 model: [
-                    { label: qsTr("Remotes"), icon: "network-server", page: 4 }
+                    { label: qsTr("Remotes"), iconSource: "qrc:/qml/icons/remotes.svg", page: 4 }
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.name: modelData.icon
+                    icon.source: modelData.iconSource
+                    icon.width: 20
+                    icon.height: 20
                     checked: root.pageIndex === modelData.page
                     text: modelData.label
                     onClicked: root.showPage(modelData.page)

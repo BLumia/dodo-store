@@ -24,9 +24,9 @@ Rectangle {
         Rectangle {
             id: iconBadge
             Layout.alignment: Qt.AlignHCenter
-            width: 56
-            height: 56
-            radius: 12
+            width: 80
+            height: 80
+            radius: 16
             color: palette.base
 
             Image {
@@ -34,7 +34,7 @@ Rectangle {
                 anchors.margins: 8
                 source: model.icon
                 fillMode: Image.PreserveAspectFit
-                sourceSize { width: 40; height: 40 }
+                sourceSize { width: 64; height: 64 }
             }
         }
 
@@ -44,18 +44,6 @@ Rectangle {
             // Fall back to the app id when no display name is available.
             text: model.name || model.appId
             font: DTK.fontManager.t7
-            color: palette.windowText
-            elide: Text.ElideRight
-            horizontalAlignment: Text.AlignHCenter
-            maximumLineCount: 1
-        }
-
-        Text {
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignHCenter
-            text: model.summary || ""
-            visible: text.length > 0
-            font: DTK.fontManager.t9
             color: palette.windowText
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
