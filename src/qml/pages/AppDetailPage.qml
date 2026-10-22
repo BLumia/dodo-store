@@ -321,6 +321,16 @@ Item {
                             }
                         }
 
+                        // Launch the installed app without changing its install state.
+                        StoreActionButton {
+                            id: openButton
+                            visible: root.installed
+                            enabled: !flatpakBackend.busy
+                            text: qsTr("Open")
+                            onClicked: flatpakBackend.launchApp(root.appAppId,
+                                                                root.appBranch, root.appArch)
+                        }
+
                         StoreActionButton {
                             visible: root.installed
                             enabled: !flatpakBackend.busy
