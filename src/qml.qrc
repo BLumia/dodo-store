@@ -4,12 +4,13 @@
         <file>qml/pages/HomePage.qml</file>
         <file>qml/pages/BrowsePage.qml</file>
         <file>qml/pages/InstalledPage.qml</file>
+        <file>qml/pages/InstalledPage.qml</file>
         <file>qml/pages/UpdatesPage.qml</file>
         <file>qml/pages/AppDetailPage.qml</file>
         <file>qml/pages/RemotesPage.qml</file>
         <file>qml/components/AppCard.qml</file>
         <file>qml/components/AppListItem.qml</file>
-        <file>qml/components/runtime.svg</file>
+        <file>qml/components/blocks.svg</file>
         <file>qml/icons/home.svg</file>
         <file>qml/icons/browse.svg</file>
         <file>qml/icons/installed.svg</file>
