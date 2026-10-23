@@ -64,6 +64,8 @@ Q_SIGNALS:
     void countChanged();
 
 private:
+    void connectItemSignals(AppItem *item);
+
     QList<AppItem *> m_items;
     bool m_ownsItems = true;
 };
