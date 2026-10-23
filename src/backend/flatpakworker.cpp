@@ -16,6 +16,8 @@
 #include <QThread>
 #include <QMetaType>
 #include <QSet>
+#include <QHash>
+#include <QStringList>
 #include <QVariantMap>
 #include <QUrl>
 #include <QRegularExpression>
@@ -732,6 +734,164 @@ void FlatpakWorker::loadUpdates()
     }
     FlatpakWorkerPrivate::adoptToMainThread(items);
     Q_EMIT updatesRefsReady(items);
+}
+
+void FlatpakWorker::installDefaultDeepinThemes()
+{
+    const QString operationRef = QStringLiteral("bootstrap/deepin-gtk-themes");
+    const QStringList themeIds = {
+        QStringLiteral("org.gtk.Gtk3theme.deepin"),
+        QStringLiteral("org.gtk.Gtk3theme.deepin-dark")
+    };
+    const auto fail = [this, &operationRef](const QString &message) {
+        d->setProgress(100, QString());
+        Q_EMIT operationFinished(operationRef, false, message);
+    };
+
+    FlatpakInstallation *inst = d->installation();
+    if (!inst) {
+        fail(QStringLiteral("Cannot open user Flatpak installation"));
+        return;
+    }
+
+    d->resetCancellable();
+    d->setProgress(0, QStringLiteral("Checking Deepin GTK themes"));
+
+    QSet<QString> installedIds;
+    g_autoptr(GError) error = nullptr;
+    g_autoptr(GPtrArray) installedRefs =
+        flatpak_installation_list_installed_refs(inst, nullptr, &error);
+    if (!installedRefs) {
+        fail(error ? QString::fromUtf8(error->message)
+                   : QStringLiteral("Cannot list installed Flatpak refs"));
+        return;
+    }
+
+    for (guint i = 0; i < installedRefs->len; ++i) {
+        auto *ref = FLATPAK_REF(g_ptr_array_index(installedRefs, i));
+        if (ref && flatpak_ref_get_kind(ref) == FLATPAK_REF_KIND_APP)
+            installedIds.insert(QString::fromUtf8(flatpak_ref_get_name(ref)));
+    }
+
+    QStringList missingIds;
+    for (const QString &id : themeIds) {
+        if (!installedIds.contains(id))
+            missingIds.append(id);
+    }
+
+    if (missingIds.isEmpty()) {
+        d->setProgress(100, QString());
+        Q_EMIT operationFinished(operationRef, true, QString());
+        return;
+    }
+
+    // Ensure the user installation has Flathub available. Use its official
+    // repository descriptor so the GPG key and repository metadata are set up.
+    g_autoptr(FlatpakRemote) remote =
+        flatpak_installation_get_remote_by_name(inst, "flathub", nullptr, &error);
+    if (!remote) {
+        g_clear_error(&error);
+        QByteArray contents;
+        QString fetchError;
+        const QString repoUrl =
+            QStringLiteral("https://dl.flathub.org/repo/flathub.flatpakrepo");
+        if (!readUri(repoUrl, &contents, &fetchError)) {
+            fail(fetchError.isEmpty()
+                     ? QStringLiteral("Cannot download the Flathub repository descriptor")
+                     : fetchError);
+            return;
+        }
+
+        g_autoptr(GBytes) bytes = g_bytes_new(contents.constData(), contents.size());
+        remote = flatpak_remote_new_from_file("flathub", bytes, &error);
+        if (!remote) {
+            fail(error ? QString::fromUtf8(error->message)
+                       : QStringLiteral("Invalid Flathub repository descriptor"));
+            return;
+        }
+
+        if (!flatpak_installation_add_remote(inst, remote, TRUE, nullptr, &error)) {
+            fail(error ? QString::fromUtf8(error->message)
+                       : QStringLiteral("Cannot add the Flathub remote"));
+            return;
+        }
+    } else if (flatpak_remote_get_disabled(remote)) {
+        fail(QStringLiteral("The Flathub remote is disabled"));
+        return;
+    }
+
+    d->setProgress(0, QStringLiteral("Resolving Deepin GTK themes"));
+    g_autoptr(GPtrArray) remoteRefs =
+        flatpak_installation_list_remote_refs_sync_full(
+            inst, "flathub", FLATPAK_QUERY_FLAGS_NONE, nullptr, &error);
+    if (!remoteRefs) {
+        fail(error ? QString::fromUtf8(error->message)
+                   : QStringLiteral("Cannot query the Flathub catalog"));
+        return;
+    }
+
+    const char *defaultArchValue = flatpak_get_default_arch();
+    const QString defaultArch = defaultArchValue
+        ? QString::fromUtf8(defaultArchValue) : QString();
+    QHash<QString, QString> refsToInstall;
+    for (const QString &id : missingIds) {
+        FlatpakRemoteRef *selected = nullptr;
+        for (guint i = 0; i < remoteRefs->len; ++i) {
+            auto *candidate =
+                FLATPAK_REMOTE_REF(g_ptr_array_index(remoteRefs, i));
+            if (!candidate
+                || flatpak_ref_get_kind(FLATPAK_REF(candidate)) != FLATPAK_REF_KIND_APP
+                || QString::fromUtf8(flatpak_ref_get_name(FLATPAK_REF(candidate))) != id) {
+                continue;
+            }
+
+            const QString arch =
+                QString::fromUtf8(flatpak_ref_get_arch(FLATPAK_REF(candidate)));
+            if (arch == defaultArch) {
+                selected = candidate;
+                break;
+            }
+            if (!selected && arch == QLatin1String("all"))
+                selected = candidate;
+        }
+
+        if (!selected) {
+            fail(QStringLiteral("Theme %1 was not found for architecture %2 in Flathub")
+                     .arg(id, defaultArch));
+            return;
+        }
+
+        refsToInstall.insert(
+            id, FlatpakWorkerPrivate::refString(
+                    QStringLiteral("app"), id,
+                    QString::fromUtf8(flatpak_ref_get_arch(FLATPAK_REF(selected))),
+                    QString::fromUtf8(flatpak_ref_get_branch(FLATPAK_REF(selected)))));
+    }
+
+    g_clear_error(&error);
+    g_autoptr(FlatpakTransaction) transaction =
+        flatpak_transaction_new_for_installation(inst, d->cancellable, &error);
+    if (!transaction) {
+        fail(error ? QString::fromUtf8(error->message)
+                   : QStringLiteral("Cannot create the Flatpak transaction"));
+        return;
+    }
+
+    for (const QString &id : missingIds) {
+        if (!flatpak_transaction_add_install(
+                transaction, "flathub", refsToInstall.value(id).toUtf8().constData(),
+                nullptr, &error)) {
+            fail(error ? QString::fromUtf8(error->message)
+                       : QStringLiteral("Cannot queue installation of %1").arg(id));
+            return;
+        }
+    }
+
+    d->setProgress(0, QStringLiteral("Installing Deepin GTK themes"));
+    QString transactionError;
+    const bool ok = d->runTransaction(transaction, &transactionError);
+    d->setProgress(100, QString());
+    Q_EMIT operationFinished(operationRef, ok, transactionError);
 }
 
 void FlatpakWorker::loadRemote(const QString &remote)

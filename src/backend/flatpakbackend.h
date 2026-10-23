@@ -86,6 +86,8 @@ public:
 
     // Refresh the installed / updates models (async).
     Q_INVOKABLE void refreshInstalled();
+    // Install the Deepin GTK themes on first launch, once per user.
+    Q_INVOKABLE void installDeepinGtkThemesIfNeeded();
     // Populate the browse model for the current remote (async).
     Q_INVOKABLE void refreshBrowse();
     Q_INVOKABLE void search(const QString &term);
@@ -252,6 +254,7 @@ private:
     QString m_currentRemote;
     QString m_loadedBrowseRemote;
     bool m_busy = false;
+    bool m_defaultThemesInstallStarted = false;
     double m_progress = 0.0;
     QString m_status;
 

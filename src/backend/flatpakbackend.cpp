@@ -13,6 +13,7 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QMetaType>
+#include <QSettings>
 #include <QSet>
 #include <QSysInfo>
 #include <QUrl>
@@ -131,6 +132,21 @@ void FlatpakBackend::refreshInstalled()
     QMetaObject::invokeMethod(m_worker, "loadInstalled", Qt::QueuedConnection);
     QMetaObject::invokeMethod(m_worker, "loadUpdates", Qt::QueuedConnection);
     QMetaObject::invokeMethod(m_worker, "loadRemotes", Qt::QueuedConnection);
+}
+
+
+void FlatpakBackend::installDeepinGtkThemesIfNeeded()
+{
+    static const QString settingsKey =
+        QStringLiteral("flatpak/deepinGtkThemesInstalled");
+
+    QSettings settings;
+    if (settings.value(settingsKey, false).toBool() || m_defaultThemesInstallStarted)
+        return;
+
+    m_defaultThemesInstallStarted = true;
+    setBusy(true);
+    QMetaObject::invokeMethod(m_worker, "installDefaultDeepinThemes", Qt::QueuedConnection);
 }
 
 void FlatpakBackend::refreshBrowse()
@@ -799,6 +815,14 @@ void FlatpakBackend::onRemoteRefsReady(const QString &remote, QList<AppItem *> i
 
 void FlatpakBackend::onOperationFinished(const QString &ref, bool success, const QString &error)
 {
+    if (ref == QLatin1String("bootstrap/deepin-gtk-themes")) {
+        m_defaultThemesInstallStarted = false;
+        if (success) {
+            QSettings settings;
+            settings.setValue(QStringLiteral("flatpak/deepinGtkThemesInstalled"), true);
+        }
+    }
+
     setBusy(false);
     refreshInstalled();
     Q_EMIT operationFinished(ref, success, error);
