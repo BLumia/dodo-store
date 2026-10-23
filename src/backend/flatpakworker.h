@@ -55,6 +55,12 @@ public:
                                const QString &arch, const QString &branch);
     Q_INVOKABLE void updateAll();
 
+    // Launch an installed application. Returns once the app has been started
+    // (it keeps running in the background); failures are reported through
+    // launchFinished().
+    Q_INVOKABLE void launch(const QString &name, const QString &arch,
+                            const QString &branch);
+
     // Flatpak web-link support: fetch and parse a ".flatpakref" URL (as opened
     // through the "flatpak+https" scheme) to the remote, app id and branch it
     // points at. The referenced remote is added when not configured yet, so the
@@ -78,6 +84,8 @@ Q_SIGNALS:
     void remoteOperationFinished(bool success, const QString &action,
                                  const QString &name, const QString &error);
     void operationFinished(const QString &ref, bool success, const QString &error);
+    // Result of launch(): the app has been started, or why it could not be.
+    void launchFinished(bool success, const QString &name, const QString &error);
     // Result of resolveFlatpakRef(): the configured remote, app id and branch a
     // ".flatpakref" link points at, or the reason it could not be resolved.
     void flatpakRefResolved(const QString &remote, const QString &appId,

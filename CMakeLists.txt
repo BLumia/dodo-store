@@ -6,8 +6,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 project(dodo-store
-    VERSION 0.2.0
-    DESCRIPTION "A Flatpak GUI store built with Qt6, CMake, QML and DTK"
+    VERSION 0.4.0
+    DESCRIPTION "A Flatpak GUI store built with Qt6, QML and DTK"
     LANGUAGES CXX
 )
 
@@ -21,6 +21,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Qml
     Quick
     QuickControls2
+    LinguistTools
 )
 
 find_package(Dtk${DTK_NAME_SUFFIX}Core REQUIRED)
@@ -41,6 +42,8 @@ add_executable(dodo-store
     src/backend/flatpakworker.cpp
     src/backend/appstreampoolbridge.h
     src/backend/appstreampoolbridge.cpp
+    src/backend/storeapiclient.h
+    src/backend/storeapiclient.cpp
 
     src/models/appitem.h
     src/models/appitem.cpp
@@ -51,6 +54,34 @@ add_executable(dodo-store
 
     src/qml.qrc
 )
+
+# Compile the .ts catalogs to .qm. They are installed as data files and loaded
+# at runtime by DGuiApplicationHelper::loadTranslator(), which searches
+# <datadir>/dodo-store/translations (and, for running from a build tree,
+# <applicationDirPath>/translations). Qt's own catalogs (qt/qtbase) are loaded
+# by the same call.
+qt_add_translations(dodo-store
+    TS_FILES
+        translations/dodo-store_pt_BR.ts
+        translations/dodo-store_zh_CN.ts
+    QM_FILES_OUTPUT_VARIABLE dodo_store_qm_files
+)
+add_dependencies(dodo-store ${PROJECT_NAME}_lrelease)
+
+install(FILES ${dodo_store_qm_files}
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/dodo-store/translations)
+
+# Make the catalogs discoverable when running straight from the build tree.
+# A custom target (rather than POST_BUILD on the executable) re-copies them
+# whenever lrelease regenerates a .qm, without forcing a relink.
+add_custom_target(dodo-store-translations ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${CMAKE_CURRENT_BINARY_DIR}/translations"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${dodo_store_qm_files} "${CMAKE_CURRENT_BINARY_DIR}/translations"
+    DEPENDS ${dodo_store_qm_files}
+    COMMENT "Copying translation catalogs next to the binary")
+add_dependencies(dodo-store dodo-store-translations)
 
 target_link_libraries(dodo-store PRIVATE
     Qt${QT_VERSION_MAJOR}::Core
@@ -74,6 +105,19 @@ install(FILES packaging/dodo-store.desktop
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 install(FILES packaging/icons/hicolor/scalable/apps/dodo-store.svg
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps)
+
+# DConfig metadata backing the store API settings (Config in QML,
+# Dtk::Core::DConfig in C++). appId is the executable name.
+install(FILES packaging/dsg/configs/dodo-store/dodo-store.json
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/dsg/configs/dodo-store)
+
+# Keep a copy in the build tree: run with DSG_DATA_DIRS=<build>/dsg to use it.
+add_custom_target(dodo-store-dconfig ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${CMAKE_CURRENT_BINARY_DIR}/dsg/configs/dodo-store"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/dsg/configs/dodo-store/dodo-store.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/dsg/configs/dodo-store/dodo-store.json")
 
 enable_testing()
 add_subdirectory(tests)
