@@ -740,7 +740,9 @@ void FlatpakBackend::onRemotesReady(const QVariantList &remotes)
     // Keep the browsed remote valid: if it disappeared (e.g. was removed) fall
     // back to the first configured remote.
     if (!m_remotes.contains(m_currentRemote)) {
-        const QString next = m_remotes.isEmpty() ? QString() : m_remotes.first();
+        const QString next = m_remotes.isEmpty() ? QString()
+            : (m_remotes.contains(QStringLiteral("flathub"))
+                   ? QStringLiteral("flathub") : m_remotes.first());
         if (m_currentRemote != next) {
             m_currentRemote = next;
             Q_EMIT currentRemoteChanged();
