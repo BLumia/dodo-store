@@ -83,7 +83,7 @@ Rectangle {
         elide: Text.ElideRight
     }
 
-    StoreActionButton {
+    Button {
         id: actionBtn
         // Keep the action button above the row-wide MouseArea so its click
         // triggers the action instead of opening the app details.
@@ -95,6 +95,22 @@ Rectangle {
         height: 36
         text: root.actionText
         visible: root.actionText.length > 0
+        background: Rectangle {
+            radius: height / 2
+            color: actionBtn.text === qsTr("Update") ? "#2ca34a" : palette.button
+            border.color: actionBtn.text === qsTr("Update")
+                          ? Qt.darker("#2ca34a", 1.08)
+                          : Qt.darker(palette.button, 1.08)
+            opacity: actionBtn.enabled ? 1 : 0.5
+        }
+        contentItem: Text {
+            text: actionBtn.text
+            font: DTK.fontManager.t6
+            color: actionBtn.text === qsTr("Update") ? "white" : palette.buttonText
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+        }
         onClicked: root.actionClicked()
     }
 
