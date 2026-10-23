@@ -82,22 +82,64 @@ QHash<int, QByteArray> AppListModel::roleNames() const
     };
 }
 
+void AppListModel::connectItemSignals(AppItem *item)
+{
+    if (!item)
+        return;
+
+    const auto notifyRole = [this, item](auto signal, int role) {
+        connect(item, signal, this, [this, item, role] {
+            const int row = m_items.indexOf(item);
+            if (row < 0)
+                return;
+            const QModelIndex changedIndex = index(row, 0);
+            Q_EMIT dataChanged(changedIndex, changedIndex, {role});
+        });
+    };
+
+    notifyRole(&AppItem::nameChanged, NameRole);
+    notifyRole(&AppItem::summaryChanged, SummaryRole);
+    notifyRole(&AppItem::descriptionChanged, DescriptionRole);
+    notifyRole(&AppItem::versionChanged, VersionRole);
+    notifyRole(&AppItem::runtimeChanged, RuntimeRole);
+    notifyRole(&AppItem::licenseChanged, LicenseRole);
+    notifyRole(&AppItem::iconChanged, IconRole);
+    notifyRole(&AppItem::screenshotsChanged, ScreenshotsRole);
+    notifyRole(&AppItem::installedSizeChanged, InstalledSizeRole);
+    notifyRole(&AppItem::downloadSizeChanged, DownloadSizeRole);
+    notifyRole(&AppItem::installedChanged, InstalledRole);
+    notifyRole(&AppItem::updateAvailableChanged, UpdateAvailableRole);
+}
+
 void AppListModel::appendItem(AppItem *item)
 {
+    if (!item)
+        return;
     beginInsertRows(QModelIndex(), m_items.size(), m_items.size());
     m_items.append(item);
     endInsertRows();
+    connectItemSignals(item);
 }
 
 void AppListModel::appendItems(const QList<AppItem *> &items)
 {
-    if (items.isEmpty())
+    QList<AppItem *> validItems;
+    validItems.reserve(items.size());
+    for (AppItem *item : items) {
+        if (item)
+            validItems.append(item);
+    }
+    if (validItems.isEmpty())
         return;
+
     // One begin/end pair for the whole batch: emitting per-row signals for a
     // 4000-row catalog floods the proxies and views on the GUI thread.
-    beginInsertRows(QModelIndex(), m_items.size(), m_items.size() + items.size() - 1);
-    m_items.append(items);
+    const int first = m_items.size();
+    beginInsertRows(QModelIndex(), first, first + validItems.size() - 1);
+    m_items.append(validItems);
     endInsertRows();
+    for (AppItem *item : validItems)
+        connectItemSignals(item);
 }
 
 void AppListModel::clear()
