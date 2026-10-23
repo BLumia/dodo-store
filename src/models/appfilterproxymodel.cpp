@@ -40,6 +40,35 @@ void AppFilterProxyModel::setFilterText(const QString &text)
     Q_EMIT filterTextChanged();
 }
 
+
+bool AppFilterProxyModel::featuredOnly() const
+{
+    return m_featuredOnly;
+}
+
+void AppFilterProxyModel::setFeaturedOnly(bool enabled)
+{
+    if (m_featuredOnly == enabled)
+        return;
+    m_featuredOnly = enabled;
+    invalidateFilter();
+    Q_EMIT featuredOnlyChanged();
+}
+
+QStringList AppFilterProxyModel::featuredAppIds() const
+{
+    return m_featuredAppIds;
+}
+
+void AppFilterProxyModel::setFeaturedAppIds(const QStringList &appIds)
+{
+    if (m_featuredAppIds == appIds)
+        return;
+    m_featuredAppIds = appIds;
+    invalidateFilter();
+    Q_EMIT featuredAppIdsChanged();
+}
+
 bool AppFilterProxyModel::hideRuntimes() const
 {
     return m_hideRuntimes;
@@ -57,14 +86,27 @@ void AppFilterProxyModel::setHideRuntimes(bool hide)
 bool AppFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
     const QModelIndex idx = sourceModel()->index(sourceRow, 0, sourceParent);
+
     if (m_hideRuntimes && idx.data(AppListModel::IsRuntimeRole).toBool())
         return false;
 
-    if (filterRegularExpression().pattern().isEmpty())
-        return true;
+    // Searching always covers the full source catalog, not just featured apps.
+    if (!m_filterText.trimmed().isEmpty()) {
+        const QString appId = idx.data(AppListModel::AppIdRole).toString();
+        const QString name = idx.data(AppListModel::NameRole).toString();
+        const QString summary = idx.data(AppListModel::SummaryRole).toString();
 
-    const QString name = idx.data(AppListModel::NameRole).toString();
-    const QString summary = idx.data(AppListModel::SummaryRole).toString();
-    return name.contains(filterRegularExpression())
-           || summary.contains(filterRegularExpression());
+        return appId.contains(m_filterText, Qt::CaseInsensitive)
+               || name.contains(m_filterText, Qt::CaseInsensitive)
+               || summary.contains(m_filterText, Qt::CaseInsensitive);
+    }
+
+    if (m_featuredOnly) {
+        const QString appId = idx.data(AppListModel::AppIdRole).toString();
+        return m_featuredAppIds.contains(appId);
+    }
+
+    return true;
+}
+
 }

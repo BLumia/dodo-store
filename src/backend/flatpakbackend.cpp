@@ -138,11 +138,20 @@ void FlatpakBackend::refreshBrowse()
     if (m_currentRemote.isEmpty())
         return;
 
-    // Reuse the loaded catalog when returning to the same remote. A pending
-    // flatpakref request bypasses the cache so its app can be resolved.
+
+    // Reuse the loaded catalog when returning to the same remote.
+    // A pending flatpakref request bypasses the cache so its app can be resolved.
     if (m_pendingOpenAppId.isEmpty()
         && m_loadedBrowseRemote == m_currentRemote
         && m_browseModel->count() > 0)
+        return;
+
+    loadBrowseRemote();
+}
+
+void FlatpakBackend::loadBrowseRemote()
+{
+    if (m_currentRemote.isEmpty())
         return;
 
     setBusy(true);
@@ -681,9 +690,8 @@ void FlatpakBackend::onFlatpakRefResolved(const QString &remote, const QString &
 
     m_pendingOpenAppId = appId;
     m_pendingOpenBranch = branch;
-    // Populate the remote's app list; onRemoteRefsReady() then emits
-    // openAppRequested() once the referenced app is actually present.
-    refreshBrowse();
+    // Force a lookup when the link target was not in the currently loaded list.
+    loadBrowseRemote();
 }
 
 void FlatpakBackend::onFlatpakRefFailed(const QString &url, const QString &error)
@@ -740,7 +748,9 @@ void FlatpakBackend::onRemotesReady(const QVariantList &remotes)
     // Keep the browsed remote valid: if it disappeared (e.g. was removed) fall
     // back to the first configured remote.
     if (!m_remotes.contains(m_currentRemote)) {
-        const QString next = m_remotes.isEmpty() ? QString() : m_remotes.first();
+        const QString next = m_remotes.isEmpty() ? QString()
+            : (m_remotes.contains(QStringLiteral("flathub"))
+                   ? QStringLiteral("flathub") : m_remotes.first());
         if (m_currentRemote != next) {
             m_currentRemote = next;
             Q_EMIT currentRemoteChanged();
@@ -756,7 +766,9 @@ void FlatpakBackend::onRemoteOperationFinished(bool success, const QString &acti
 {
     setBusy(false);
     if (success) {
-        // Remote changes may invalidate the cached catalog.
+
+        // Changes to configured remotes can invalidate the loaded catalog.
+
         m_loadedBrowseRemote.clear();
         QMetaObject::invokeMethod(m_worker, "loadRemotes", Qt::QueuedConnection);
     }
