@@ -163,7 +163,7 @@ ApplicationWindow {
         menu: Menu {
             MenuItem {
                 text: qsTr("Settings")
-                onTriggered: settingsDialog.show()
+                onTriggered: root.openSettings()
             }
             MenuSeparator {}
             ThemeMenu {}
@@ -205,41 +205,62 @@ ApplicationWindow {
         onApiProxyChanged: if (root.storeSettingsReady) root.applyStoreSettings()
     }
 
-    Settings.SettingsDialog {
-        id: settingsDialog
-        width: 720
-        height: 520
-        config: storeSettings
+    // The dialog is created on demand and destroyed when closed. DConfig fills
+    // the Config asynchronously; building the dialog before that leaves its
+    // controls showing the defaults (e.g. the API checkbox appears checked even
+    // though the persisted value is false). Recreating it on every open also
+    // picks up values changed outside the dialog.
+    Loader {
+        id: settingsLoader
+        active: false
+        sourceComponent: Component {
+            Settings.SettingsDialog {
+                width: 720
+                height: 520
+                config: storeSettings
 
-        groups: [
-            Settings.SettingsGroup {
-                key: "store"
-                name: qsTr("Store")
+                onVisibleChanged: {
+                    if (!visible)
+                        Qt.callLater(function() { settingsLoader.active = false })
+                }
 
-                children: [
+                groups: [
                     Settings.SettingsGroup {
-                        key: "api"
-                        name: qsTr("Online content")
+                        key: "store"
+                        name: qsTr("Store")
 
-                        Settings.SettingsOption {
-                            key: "apiEnabled"
-                            name: qsTr("Enable store API")
-                            Settings.CheckBox {}
-                        }
-                        Settings.SettingsOption {
-                            key: "apiBaseUrl"
-                            name: qsTr("Store API address")
-                            Settings.LineEdit {}
-                        }
-                        Settings.SettingsOption {
-                            key: "apiProxy"
-                            name: qsTr("Proxy for the store API")
-                            Settings.LineEdit {}
-                        }
+                        children: [
+                            Settings.SettingsGroup {
+                                key: "api"
+                                name: qsTr("Online content")
+
+                                Settings.SettingsOption {
+                                    key: "apiEnabled"
+                                    name: qsTr("Enable store API")
+                                    Settings.CheckBox {}
+                                }
+                                Settings.SettingsOption {
+                                    key: "apiBaseUrl"
+                                    name: qsTr("Store API address")
+                                    Settings.LineEdit {}
+                                }
+                                Settings.SettingsOption {
+                                    key: "apiProxy"
+                                    name: qsTr("Proxy for the store API")
+                                    Settings.LineEdit {}
+                                }
+                            }
+                        ]
                     }
                 ]
             }
-        ]
+        }
+    }
+
+    function openSettings() {
+        settingsLoader.active = true
+        if (settingsLoader.item)
+            settingsLoader.item.show()
     }
 
     // Window background: blurred translucent sidebar column on the left
