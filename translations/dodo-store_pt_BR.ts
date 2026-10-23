@@ -4,77 +4,77 @@
 <context>
     <name>AppDetailPage</name>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="147"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="148"/>
         <source>Copied to clipboard</source>
         <translation>Copiado para a área de transferência</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="196"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="197"/>
         <source>Copy</source>
         <translation>Copiar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="315"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="316"/>
         <source>Install</source>
         <translation>Instalar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="410"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="411"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="435"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="436"/>
         <source>Category</source>
         <translation>Categoria</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="436"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="437"/>
         <source>Package</source>
         <translation>Pacote</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="437"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="438"/>
         <source>Size</source>
         <translation>Tamanho</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="438"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="439"/>
         <source>Version</source>
         <translation>Versão</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="439"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="440"/>
         <source>Developer</source>
         <translation>Desenvolvedor</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="594"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="595"/>
         <source>Homepage:</source>
         <translation>Site:</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="632"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="633"/>
         <source>What&apos;s new</source>
         <translation>Novidades</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="677"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="678"/>
         <source>Click anywhere to close</source>
         <translation>Clique em qualquer lugar para fechar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="315"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="316"/>
         <source>Update</source>
         <translation>Atualizar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="347"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="348"/>
         <source>Open</source>
         <translation>Abrir</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/AppDetailPage.qml" line="372"/>
+        <location filename="../src/qml/pages/AppDetailPage.qml" line="373"/>
         <source>Uninstall</source>
         <translation>Desinstalar</translation>
     </message>
@@ -82,22 +82,92 @@
 <context>
     <name>BrowsePage</name>
     <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="28"/>
+        <source>All applications</source>
+        <translation>Todos os aplicativos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="29"/>
+        <source>Audio &amp; Video</source>
+        <translation>Áudio e vídeo</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="30"/>
+        <source>Development</source>
+        <translation>Desenvolvimento</translation>
+    </message>
+    <message>
         <location filename="../src/qml/pages/BrowsePage.qml" line="31"/>
+        <source>Education</source>
+        <translation>Educação</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="32"/>
+        <source>Games</source>
+        <translation>Jogos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="33"/>
+        <source>Graphics</source>
+        <translation>Gráficos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="34"/>
+        <source>Health &amp; Fitness</source>
+        <translation>Saúde e fitness</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="35"/>
+        <source>Network</source>
+        <translation>Rede</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="36"/>
+        <source>Office</source>
+        <translation>Escritório</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="37"/>
+        <source>Science</source>
+        <translation>Ciência</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="38"/>
+        <source>System</source>
+        <translation>Sistema</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="39"/>
+        <source>Utilities</source>
+        <translation>Utilitários</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="90"/>
+        <source>Search results in %1</source>
+        <translation>Resultados da pesquisa em %1</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="91"/>
+        <source>Search results</source>
+        <translation>Resultados da pesquisa</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="92"/>
         <source>Browse flatpak apps</source>
         <translation>Navegar pelos aplicativos Flatpak</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/BrowsePage.qml" line="37"/>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="100"/>
         <source>Source:</source>
         <translation>Fonte:</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/BrowsePage.qml" line="105"/>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="221"/>
         <source>No Flatpak remotes configured.</source>
         <translation>Nenhum repositório Flatpak configurado.</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/BrowsePage.qml" line="106"/>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="219"/>
         <source>No applications found.</source>
         <translation>Nenhum aplicativo encontrado.</translation>
     </message>
@@ -105,14 +175,44 @@
 <context>
     <name>HomePage</name>
     <message>
-        <location filename="../src/qml/pages/HomePage.qml" line="21"/>
+        <location filename="../src/qml/pages/HomePage.qml" line="30"/>
+        <source>Trending</source>
+        <translation>Em alta</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/HomePage.qml" line="31"/>
+        <source>Popular</source>
+        <translation>Populares</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/HomePage.qml" line="32"/>
+        <source>New</source>
+        <translation>Novos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/HomePage.qml" line="33"/>
+        <source>Updated</source>
+        <translation>Atualizados</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/HomePage.qml" line="71"/>
         <source>Discover applications</source>
         <translation>Descobrir aplicativos</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/HomePage.qml" line="28"/>
-        <source>A curated selection of flatpak apps from the Flathub catalog.</source>
-        <translation>Uma seleção de aplicativos Flatpak do catálogo do Flathub.</translation>
+        <location filename="../src/qml/pages/HomePage.qml" line="78"/>
+        <source>Refresh</source>
+        <translation>Atualizar</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/HomePage.qml" line="158"/>
+        <source>Failed to load. Check the store API settings and retry.</source>
+        <translation>Falha ao carregar. Verifique as configurações da API da loja e tente novamente.</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/HomePage.qml" line="167"/>
+        <source>No applications</source>
+        <translation>Nenhum aplicativo</translation>
     </message>
 </context>
 <context>
@@ -280,34 +380,62 @@
     </message>
 </context>
 <context>
-    <name>UpdatesPage</name>
+    <name>StoreApiClient</name>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="24"/>
-        <source>%1 available updates</source>
-        <translation>%1 atualizações disponíveis</translation>
+        <location filename="../src/backend/storeapiclient.cpp" line="93"/>
+        <source>Store API address is empty</source>
+        <translation>O endereço da API da loja está vazio</translation>
     </message>
     <message>
+        <location filename="../src/backend/storeapiclient.cpp" line="149"/>
+        <source>Invalid store API response</source>
+        <translation>Resposta inválida da API da loja</translation>
+    </message>
+</context>
+<context>
+    <name>UpdatesPage</name>
+    <message>
         <location filename="../src/qml/pages/UpdatesPage.qml" line="29"/>
+        <source>%1 application updates</source>
+        <translation>%1 atualizações de aplicativos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="31"/>
+        <source> · %1 runtime updates</source>
+        <translation> · %1 atualizações de runtime</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="37"/>
         <source>Update All</source>
         <translation>Atualizar tudo</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="34"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="42"/>
         <source>Check for updates</source>
         <translation>Verificar atualizações</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="38"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="46"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="59"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="76"/>
+        <source>Runtimes and dependencies</source>
+        <translation>Runtimes e dependências</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="77"/>
+        <source>Applications</source>
+        <translation>Aplicativos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="88"/>
         <source>Update</source>
         <translation>Atualizar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="71"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="103"/>
         <source>You&apos;re up to date.</source>
         <translation>Todos os aplicativos estão atualizados.</translation>
     </message>
@@ -315,108 +443,135 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../src/qml/main.qml" line="23"/>
-        <location filename="../src/qml/main.qml" line="140"/>
+        <location filename="../src/qml/main.qml" line="24"/>
+        <location filename="../src/qml/main.qml" line="177"/>
         <source>Dodo Store</source>
         <translation>Dodo Store</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="67"/>
+        <location filename="../src/qml/main.qml" line="79"/>
         <source>Operation completed: %1</source>
         <translation>Operação concluída: %1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="69"/>
+        <location filename="../src/qml/main.qml" line="81"/>
         <source>Operation failed: %1 — %2</source>
         <translation>Falha na operação: %1 — %2</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="73"/>
+        <location filename="../src/qml/main.qml" line="85"/>
         <source>Remote operation failed: %1</source>
         <translation>Falha na operação do repositório: %1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="75"/>
+        <location filename="../src/qml/main.qml" line="87"/>
         <source>Remote &quot;%1&quot; added</source>
         <translation>Repositório &quot;%1&quot; adicionado</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="77"/>
+        <location filename="../src/qml/main.qml" line="89"/>
         <source>Remote &quot;%1&quot; removed</source>
         <translation>Repositório &quot;%1&quot; removido</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="79"/>
+        <location filename="../src/qml/main.qml" line="91"/>
         <source>Remote &quot;%1&quot; updated</source>
         <translation>Repositório &quot;%1&quot; atualizado</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="84"/>
+        <location filename="../src/qml/main.qml" line="96"/>
         <source>Failed to open %1: %2</source>
         <translation>Falha ao abrir %1: %2</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="93"/>
+        <location filename="../src/qml/main.qml" line="99"/>
+        <source>Store API refresh failed, showing cached data: %1</source>
+        <translation>Falha ao atualizar a API da loja, mostrando dados em cache: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/main.qml" line="108"/>
         <source>Application not found in the selected source: %1</source>
         <translation>Aplicativo não encontrado na fonte selecionada: %1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="96"/>
+        <location filename="../src/qml/main.qml" line="111"/>
         <source>Cannot open link: %1</source>
         <translation>Não foi possível abrir o link: %1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="132"/>
+        <location filename="../src/qml/main.qml" line="156"/>
         <source>Search applications</source>
         <translation>Pesquisar aplicativos</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="142"/>
+        <location filename="../src/qml/main.qml" line="179"/>
         <source>A Flatpak graphical application store built with Qt6, CMake, QML and DTK.</source>
         <translation>Uma loja gráfica de aplicativos Flatpak desenvolvida com Qt 6, CMake, QML e DTK.</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="145"/>
+        <location filename="../src/qml/main.qml" line="182"/>
         <source>Released under LGPL-3.0-or-later.</source>
         <translation>Distribuído sob a licença LGPL-3.0 ou posterior.</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="210"/>
+        <location filename="../src/qml/main.qml" line="217"/>
+        <location filename="../src/qml/main.qml" line="306"/>
         <source>Store</source>
         <translation>Loja</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="220"/>
+        <location filename="../src/qml/main.qml" line="222"/>
+        <source>Online content</source>
+        <translation>Conteúdo online</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/main.qml" line="226"/>
+        <source>Enable store API</source>
+        <translation>Ativar API da loja</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/main.qml" line="231"/>
+        <source>Store API address</source>
+        <translation>Endereço da API da loja</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/main.qml" line="236"/>
+        <source>Proxy for the store API</source>
+        <translation>Proxy para a API da loja</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/main.qml" line="316"/>
         <source>Home</source>
         <translation>Página Inicial</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="221"/>
+        <location filename="../src/qml/main.qml" line="317"/>
         <source>Browse</source>
         <translation>Navegar</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="237"/>
+        <location filename="../src/qml/main.qml" line="333"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="247"/>
+        <location filename="../src/qml/main.qml" line="343"/>
         <source>Installed</source>
         <translation>Instalados</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="248"/>
+        <location filename="../src/qml/main.qml" line="344"/>
         <source>Updates</source>
         <translation>Atualizações</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="285"/>
+        <location filename="../src/qml/main.qml" line="165"/>
+        <location filename="../src/qml/main.qml" line="381"/>
         <source>Settings</source>
         <translation>Configurações</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="295"/>
+        <location filename="../src/qml/main.qml" line="391"/>
         <source>Remotes</source>
         <translation>Repositórios</translation>
     </message>

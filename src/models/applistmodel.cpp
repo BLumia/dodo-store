@@ -145,9 +145,20 @@ void AppListModel::appendItems(const QList<AppItem *> &items)
 void AppListModel::clear()
 {
     beginResetModel();
-    qDeleteAll(m_items);
+    if (m_ownsItems)
+        qDeleteAll(m_items);
     m_items.clear();
     endResetModel();
+}
+
+void AppListModel::setOwnsItems(bool owns)
+{
+    m_ownsItems = owns;
+}
+
+bool AppListModel::ownsItems() const
+{
+    return m_ownsItems;
 }
 
 QList<AppItem *> AppListModel::items() const { return m_items; }

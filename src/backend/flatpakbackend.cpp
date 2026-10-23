@@ -5,6 +5,7 @@
 #include "flatpakbackend.h"
 #include "flatpakworker.h"
 #include "appstreampoolbridge.h"
+#include "storeapiclient.h"
 #include "../models/appitem.h"
 #include "../models/applistmodel.h"
 
@@ -12,7 +13,10 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QMetaType>
+#include <QSet>
+#include <QSysInfo>
 #include <QUrl>
+#include <QVariantMap>
 
 Q_DECLARE_METATYPE(QList<AppItem *>)
 
@@ -22,8 +26,25 @@ FlatpakBackend::FlatpakBackend(QObject *parent)
     , m_appstream(new AppStreamPoolBridge(this))
     , m_installedModel(new AppListModel(this))
     , m_browseModel(new AppListModel(this))
+    , m_browseListModel(new AppListModel(this))
+    , m_trendingModel(new AppListModel(this))
+    , m_popularModel(new AppListModel(this))
+    , m_newModel(new AppListModel(this))
+    , m_updatedModel(new AppListModel(this))
     , m_updatesModel(new AppListModel(this))
+    , m_storeApi(new StoreApiClient(this))
 {
+    // browseListModel is a filtered view of browseModel; browseModel owns the
+    // AppItems, so clearing the view must not delete them.
+    m_browseListModel->setOwnsItems(false);
+
+    connect(m_storeApi, &StoreApiClient::collectionReady,
+            this, &FlatpakBackend::onApiCollectionReady);
+    connect(m_storeApi, &StoreApiClient::collectionFailed,
+            this, &FlatpakBackend::onApiCollectionFailed);
+    connect(m_storeApi, &StoreApiClient::refreshStarted,
+            this, &FlatpakBackend::onApiRefreshStarted);
+
     qRegisterMetaType<QList<AppItem *>>("QList<AppItem*>");
 
     m_thread = new QThread(this);
@@ -59,6 +80,16 @@ FlatpakBackend::~FlatpakBackend()
 
 AppListModel *FlatpakBackend::installedModel() const { return m_installedModel; }
 AppListModel *FlatpakBackend::browseModel() const { return m_browseModel; }
+AppListModel *FlatpakBackend::browseListModel() const { return m_browseListModel; }
+AppListModel *FlatpakBackend::trendingModel() const { return m_trendingModel; }
+AppListModel *FlatpakBackend::popularModel() const { return m_popularModel; }
+AppListModel *FlatpakBackend::newModel() const { return m_newModel; }
+AppListModel *FlatpakBackend::updatedModel() const { return m_updatedModel; }
+bool FlatpakBackend::storeApiEnabled() const { return m_storeApiEnabled; }
+QString FlatpakBackend::trendingStatus() const { return m_trendingStatus; }
+QString FlatpakBackend::popularStatus() const { return m_popularStatus; }
+QString FlatpakBackend::newStatus() const { return m_newStatus; }
+QString FlatpakBackend::updatedStatus() const { return m_updatedStatus; }
 AppListModel *FlatpakBackend::updatesModel() const { return m_updatesModel; }
 
 int FlatpakBackend::applicationUpdateCount() const
@@ -117,6 +148,362 @@ void FlatpakBackend::refreshBrowse()
     setBusy(true);
     QMetaObject::invokeMethod(m_worker, "loadRemote", Qt::QueuedConnection,
                               Q_ARG(QString, m_currentRemote));
+}
+
+namespace {
+// How many rows the Browse listing gains per loadMoreBrowse() call.
+constexpr int kBrowseChunkSize = 100;
+} // namespace
+
+void FlatpakBackend::showBrowseCategory(const QString &category)
+{
+    m_browseCategory = category;
+    m_browseCategoryActive = true;
+    m_browseSearchTerm.clear();
+
+    // browseModel holds every app of the current remote; keep the matching
+    // ones for this category (empty category = all applications).
+    const QList<AppItem *> all = m_browseModel->items();
+    m_browseCategoryItems.clear();
+    if (category.isEmpty()) {
+        m_browseCategoryItems = all;
+    } else {
+        const QStringList ids = m_appstream->appIdsInCategory(category);
+        if (!ids.isEmpty()) {
+            const QSet<QString> wanted(ids.begin(), ids.end());
+            m_browseCategoryItems.reserve(all.size());
+            for (AppItem *item : all) {
+                if (item && wanted.contains(item->appId()))
+                    m_browseCategoryItems.append(item);
+            }
+        }
+    }
+
+    m_browseFiltered = m_browseCategoryItems;
+    m_browseShown = 0;
+    m_browseListModel->clear();
+    loadMoreBrowse();
+}
+
+void FlatpakBackend::searchBrowse(const QString &term)
+{
+    m_browseSearchTerm = term;
+    if (term.isEmpty()) {
+        if (m_browseCategoryActive)
+            showBrowseCategory(m_browseCategory);
+        else
+            clearBrowseCategory();
+        return;
+    }
+
+    // Search only within the current scope: the selected category, or the
+    // whole catalog when the category tiles are shown.
+    const QList<AppItem *> base =
+        m_browseCategoryActive ? m_browseCategoryItems : m_browseModel->items();
+    QList<AppItem *> matches;
+    matches.reserve(base.size());
+    for (AppItem *item : base) {
+        if (!item)
+            continue;
+        if (item->name().contains(term, Qt::CaseInsensitive)
+            || item->summary().contains(term, Qt::CaseInsensitive)
+            || item->appId().contains(term, Qt::CaseInsensitive)) {
+            matches.append(item);
+        }
+    }
+
+    m_browseFiltered = matches;
+    m_browseShown = 0;
+    m_browseListModel->clear();
+    loadMoreBrowse();
+}
+
+void FlatpakBackend::loadMoreBrowse()
+{
+    const int total = m_browseFiltered.size();
+    if (m_browseShown >= total)
+        return;
+
+    const int end = qMin(m_browseShown + kBrowseChunkSize, total);
+    m_browseListModel->appendItems(
+        m_browseFiltered.mid(m_browseShown, end - m_browseShown));
+    m_browseShown = end;
+    qDebug() << "browse:" << m_browseCategory << m_browseSearchTerm
+             << "- showing" << m_browseShown << "of" << total;
+}
+
+void FlatpakBackend::clearBrowseCategory()
+{
+    m_browseCategoryActive = false;
+    m_browseCategory.clear();
+    m_browseSearchTerm.clear();
+    m_browseCategoryItems.clear();
+    m_browseFiltered.clear();
+    m_browseShown = 0;
+    m_browseListModel->clear();
+}
+
+void FlatpakBackend::configureStoreApi(bool enabled, const QString &baseUrl,
+                                       const QString &proxy)
+{
+    const bool changed = !m_storeApiConfigured
+        || enabled != m_storeApiEnabled
+        || baseUrl != m_apiBaseUrl
+        || proxy != m_apiProxy;
+
+    m_storeApiConfigured = true;
+    qDebug() << "store api: configure enabled=" << enabled << "base=" << baseUrl << "proxy=" << proxy;
+    m_storeApiEnabled = enabled;
+    m_apiBaseUrl = baseUrl;
+    m_apiProxy = proxy;
+    m_storeApi->configure(baseUrl, proxy);
+
+    if (!changed)
+        return;
+
+    m_trendingModel->clear();
+    m_popularModel->clear();
+    m_newModel->clear();
+    m_updatedModel->clear();
+    m_trendingStatus.clear();
+    m_popularStatus.clear();
+    m_newStatus.clear();
+    m_updatedStatus.clear();
+    m_refreshFailureEmitted = false;
+
+    Q_EMIT storeApiEnabledChanged();
+    Q_EMIT homeStatusChanged();
+
+    if (m_storeApiEnabled)
+        m_storeApi->refresh(false);
+    else
+        loadOfflineHome();
+}
+
+void FlatpakBackend::refreshHome()
+{
+    if (m_storeApiEnabled)
+        m_storeApi->refresh(true);
+    else
+        loadOfflineHome();
+}
+
+void FlatpakBackend::onApiRefreshStarted()
+{
+    if (!m_storeApiEnabled)
+        return;
+
+    m_trendingStatus = QStringLiteral("loading");
+    m_popularStatus = QStringLiteral("loading");
+    m_newStatus = QStringLiteral("loading");
+    m_updatedStatus = QStringLiteral("loading");
+    m_refreshFailureEmitted = false;
+    Q_EMIT homeStatusChanged();
+}
+
+void FlatpakBackend::onApiCollectionReady(const QString &collection,
+                                          const QVariantList &apps)
+{
+    if (!m_storeApiEnabled)
+        return;
+
+    AppListModel *model = homeModelFor(collection);
+    if (!model)
+        return;
+
+    fillHomeModel(model, apps);
+    setHomeStatus(collection, QStringLiteral("ok"));
+    Q_EMIT homeLoaded();
+}
+
+void FlatpakBackend::onApiCollectionFailed(const QString &collection,
+                                           const QString &error, bool hadCache,
+                                           const QVariantList &cachedApps)
+{
+    if (!m_storeApiEnabled)
+        return;
+
+    AppListModel *model = homeModelFor(collection);
+    if (!model)
+        return;
+
+    if (hadCache) {
+        fillHomeModel(model, cachedApps);
+        setHomeStatus(collection, QStringLiteral("stale"));
+        if (!m_refreshFailureEmitted) {
+            m_refreshFailureEmitted = true;
+            Q_EMIT homeRefreshFailed(error);
+        }
+    } else {
+        model->clear();
+        setHomeStatus(collection, QStringLiteral("error"));
+    }
+    Q_EMIT homeLoaded();
+}
+
+void FlatpakBackend::loadOfflineHome()
+{
+    // Trending/New need Flathub's server-side statistics; hide them offline.
+    m_trendingModel->clear();
+    m_newModel->clear();
+    m_trendingStatus.clear();
+    m_newStatus.clear();
+
+    if (!m_appstream->loaded()) {
+        m_popularStatus = QStringLiteral("loading");
+        m_updatedStatus = QStringLiteral("loading");
+        Q_EMIT homeStatusChanged();
+        return;
+    }
+
+    const QString arch = hostFlatpakArch();
+
+    // A small curated list of well-known applications, only kept when the
+    // local AppStream data knows them.
+    static const QStringList popularIds = {
+        QStringLiteral("org.mozilla.firefox"),
+        QStringLiteral("org.videolan.VLC"),
+        QStringLiteral("org.telegram.desktop"),
+        QStringLiteral("com.spotify.Client"),
+        QStringLiteral("com.discordapp.Discord"),
+        QStringLiteral("org.gimp.GIMP"),
+        QStringLiteral("org.kde.krita"),
+        QStringLiteral("org.inkscape.Inkscape"),
+        QStringLiteral("org.libreoffice.LibreOffice"),
+        QStringLiteral("com.valvesoftware.Steam"),
+        QStringLiteral("com.usebottles.bottles"),
+        QStringLiteral("com.obsproject.Studio"),
+        QStringLiteral("org.audacityteam.Audacity"),
+        QStringLiteral("org.blender.Blender"),
+        QStringLiteral("org.localsend.localsend_app"),
+        QStringLiteral("com.rustdesk.RustDesk"),
+        QStringLiteral("org.gnome.TextEditor"),
+        QStringLiteral("org.gnome.Calculator"),
+        QStringLiteral("com.github.tchx84.Flatseal"),
+        QStringLiteral("md.obsidian.Obsidian"),
+        QStringLiteral("org.gnome.Loupe"),
+        QStringLiteral("org.gnome.Fractal"),
+        QStringLiteral("io.github.celluloid_player.Celluloid"),
+        QStringLiteral("org.gnome.Geary"),
+    };
+
+    QList<AppItem *> popular;
+    popular.reserve(popularIds.size());
+    for (const QString &appId : popularIds) {
+        if (!m_appstream->hasComponent(appId))
+            continue;
+        auto *item = new AppItem(appId, QStringLiteral("flathub"),
+                                 QStringLiteral("stable"), arch, false);
+        m_appstream->enrich(item);
+        popular.append(item);
+    }
+    m_popularModel->clear();
+    m_popularModel->appendItems(popular);
+    m_popularStatus = QStringLiteral("ok");
+
+    // "Updated": newest AppStream release date first.
+    const QStringList updatedIds = m_appstream->recentlyUpdatedAppIds(24);
+    QList<AppItem *> updated;
+    updated.reserve(updatedIds.size());
+    for (const QString &appId : updatedIds) {
+        auto *item = new AppItem(appId, QStringLiteral("flathub"),
+                                 QStringLiteral("stable"), arch, false);
+        m_appstream->enrich(item);
+        updated.append(item);
+    }
+    m_updatedModel->clear();
+    m_updatedModel->appendItems(updated);
+    m_updatedStatus = QStringLiteral("ok");
+
+    Q_EMIT homeStatusChanged();
+    Q_EMIT homeLoaded();
+}
+
+void FlatpakBackend::fillHomeModel(AppListModel *model, const QVariantList &apps)
+{
+    if (!model)
+        return;
+
+    const QString arch = hostFlatpakArch();
+    QList<AppItem *> items;
+    items.reserve(apps.size());
+
+    for (const QVariant &entry : apps) {
+        const QVariantMap map = entry.toMap();
+        const QString appId = map.value(QStringLiteral("app_id")).toString();
+        if (appId.isEmpty())
+            continue;
+
+        // The API lists the architectures an app is published for.
+        const QVariantList arches = map.value(QStringLiteral("arches")).toList();
+        if (!arches.isEmpty()) {
+            bool supported = false;
+            for (const QVariant &value : arches) {
+                if (value.toString() == arch) {
+                    supported = true;
+                    break;
+                }
+            }
+            if (!supported)
+                continue;
+        }
+
+        auto *item = new AppItem(appId, QStringLiteral("flathub"),
+                                 QStringLiteral("stable"), arch, false);
+        item->setName(map.value(QStringLiteral("name")).toString());
+        item->setSummary(map.value(QStringLiteral("summary")).toString());
+        item->setDescription(map.value(QStringLiteral("description")).toString());
+        item->setDeveloper(map.value(QStringLiteral("developer_name")).toString());
+        const QUrl icon(map.value(QStringLiteral("icon")).toString());
+        if (!icon.isEmpty())
+            item->setIcon(icon);
+
+        // Prefer the localized AppStream metadata; the API text is a fallback.
+        m_appstream->enrich(item);
+        items.append(item);
+    }
+
+    model->clear();
+    model->appendItems(items);
+}
+
+AppListModel *FlatpakBackend::homeModelFor(const QString &collection) const
+{
+    if (collection == QLatin1String("trending"))
+        return m_trendingModel;
+    if (collection == QLatin1String("popular"))
+        return m_popularModel;
+    if (collection == QLatin1String("recently-added"))
+        return m_newModel;
+    if (collection == QLatin1String("recently-updated"))
+        return m_updatedModel;
+    return nullptr;
+}
+
+void FlatpakBackend::setHomeStatus(const QString &collection, const QString &status)
+{
+    QString *target = nullptr;
+    if (collection == QLatin1String("trending"))
+        target = &m_trendingStatus;
+    else if (collection == QLatin1String("popular"))
+        target = &m_popularStatus;
+    else if (collection == QLatin1String("recently-added"))
+        target = &m_newStatus;
+    else if (collection == QLatin1String("recently-updated"))
+        target = &m_updatedStatus;
+
+    if (!target || *target == status)
+        return;
+    *target = status;
+    Q_EMIT homeStatusChanged();
+}
+
+QString FlatpakBackend::hostFlatpakArch()
+{
+    const QString arch = QSysInfo::buildCpuArchitecture();
+    if (arch == QLatin1String("arm64"))
+        return QStringLiteral("aarch64");
+    return arch;
 }
 
 void FlatpakBackend::refreshMetadata()
@@ -262,7 +649,10 @@ QObject *FlatpakBackend::findAppItem(const QString &appId, const QString &branch
 
 QObject *FlatpakBackend::findAppByKey(const QString &key) const
 {
-    const AppListModel *models[] = { m_browseModel, m_installedModel, m_updatesModel };
+    const AppListModel *models[] = {
+        m_browseModel, m_installedModel, m_updatesModel,
+        m_trendingModel, m_popularModel, m_newModel, m_updatedModel,
+    };
     for (const AppListModel *model : models) {
         const QList<AppItem *> items = model->items();
         for (AppItem *item : items) {
@@ -314,8 +704,21 @@ void FlatpakBackend::onInstalledRefsReady(QList<AppItem *> items)
 
 void FlatpakBackend::onUpdatesRefsReady(QList<AppItem *> items)
 {
+    // Applications first, then runtimes. The Updates page groups the rows with
+    // ListView sections, which require each group's rows to be contiguous.
+    QList<AppItem *> ordered;
+    ordered.reserve(items.size());
+    for (AppItem *item : items) {
+        if (item && !item->isRuntime())
+            ordered.append(item);
+    }
+    for (AppItem *item : items) {
+        if (item && item->isRuntime())
+            ordered.append(item);
+    }
+
     m_updatesModel->clear();
-    m_updatesModel->appendItems(items);
+    m_updatesModel->appendItems(ordered);
     enrichBatch(m_updatesModel, 0);
     setBusy(false);
     Q_EMIT updatesLoaded();
@@ -362,6 +765,13 @@ void FlatpakBackend::onRemoteOperationFinished(bool success, const QString &acti
 
 void FlatpakBackend::onRemoteRefsReady(const QString &remote, QList<AppItem *> items)
 {
+    // The Browse listing references items owned by browseModel; drop those
+    // references before browseModel deletes them.
+    m_browseListModel->clear();
+    m_browseCategoryItems.clear();
+    m_browseFiltered.clear();
+    m_browseShown = 0;
+
     m_browseModel->clear();
     m_browseModel->appendItems(items);
     m_loadedBrowseRemote = remote;
@@ -378,6 +788,13 @@ void FlatpakBackend::onRemoteRefsReady(const QString &remote, QList<AppItem *> i
         m_pendingOpenBranch.clear();
         Q_EMIT openAppRequested(appId, branch);
     }
+
+    // Re-apply the active category / all-applications listing (or the search
+    // within it) to the new catalog.
+    if (!m_browseSearchTerm.isEmpty())
+        searchBrowse(m_browseSearchTerm);
+    else if (m_browseCategoryActive)
+        showBrowseCategory(m_browseCategory);
 }
 
 void FlatpakBackend::onOperationFinished(const QString &ref, bool success, const QString &error)
@@ -416,6 +833,24 @@ void FlatpakBackend::onAppStreamLoaded(bool success)
     enrichBatch(m_installedModel, 0);
     enrichBatch(m_browseModel, 0);
     enrichBatch(m_updatesModel, 0);
+
+    // Home items may have been created before the AppStream pool was ready.
+    for (AppListModel *model : {m_trendingModel, m_popularModel, m_newModel,
+                                m_updatedModel}) {
+        for (AppItem *item : model->items())
+            m_appstream->enrich(item);
+    }
+    if (!m_storeApiEnabled)
+        loadOfflineHome();
+
+    // The AppStream category index is only available once the pool is loaded.
+    // If a category (or a search within one) was opened before that, rebuild
+    // its listing now.
+    if (!m_browseSearchTerm.isEmpty())
+        searchBrowse(m_browseSearchTerm);
+    else if (m_browseCategoryActive)
+        showBrowseCategory(m_browseCategory);
+
     Q_EMIT installedLoaded();
     Q_EMIT browseLoaded();
     Q_EMIT updatesLoaded();
