@@ -11,6 +11,11 @@ Item {
     id: root
     property var openDetail: null
 
+    // The model holds application updates first, then runtime updates. This
+    // keeps the header counts and the "Update All" state without a second model.
+    readonly property int runtimeUpdateCount:
+        Math.max(0, flatpakBackend.updatesModel.count - flatpakBackend.applicationUpdateCount)
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 16
@@ -21,9 +26,9 @@ Item {
             spacing: 8
             Label {
                 Layout.fillWidth: true
-                text: qsTr("%1 application updates").arg(flatpakBackend.updatesModel.count)
-                      + (flatpakBackend.runtimeUpdatesModel.count > 0
-                         ? qsTr(" · %1 runtime updates").arg(flatpakBackend.runtimeUpdatesModel.count)
+                text: qsTr("%1 application updates").arg(flatpakBackend.applicationUpdateCount)
+                      + (root.runtimeUpdateCount > 0
+                         ? qsTr(" · %1 runtime updates").arg(root.runtimeUpdateCount)
                          : "")
                 font: DTK.fontManager.t8
                 color: palette.windowText
@@ -58,7 +63,6 @@ Item {
             font: DTK.fontManager.t6
             color: palette.windowText
         }
-
         ListView {
             id: appList
             Layout.fillWidth: true
@@ -67,17 +71,39 @@ Item {
             clip: true
             spacing: 4
             model: flatpakBackend.updatesModel
+
+            section.property: "isRuntime"
+            section.delegate: Label {
+                width: list.width
+                height: 36
+                leftPadding: 4
+                verticalAlignment: Text.AlignBottom
+                text: String(section) === "true"
+                      ? qsTr("Runtimes and dependencies")
+                      : qsTr("Applications")
+                font: DTK.fontManager.t6
+                color: palette.windowText
+                opacity: 0.85
+            }
+
             delegate: AppListItem {
-                width: appList.width
-                actionText: qsTr("Update")
+                width: list.width
+                // Runtimes are updated through Update All / as dependencies,
+                // so only applications get a per-row Update button and a
+                // detail page.
+                actionText: model.isRuntime ? "" : qsTr("Update")
                 onClicked: {
-                    if (root.openDetail)
+                    if (!model.isRuntime && root.openDetail)
                         root.openDetail(model.item)
                 }
-                onActionClicked: flatpakBackend.updateApp(model.appId, model.branch, model.arch)
+                onActionClicked: {
+                    if (!model.isRuntime)
+                        flatpakBackend.updateApp(model.appId, model.branch, model.arch)
+                }
             }
         }
 
+        Label {
         Label {
             visible: flatpakBackend.runtimeUpdatesModel.count > 0
             Layout.fillWidth: true

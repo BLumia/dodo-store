@@ -54,6 +54,11 @@ QString singleInstanceSocketPath()
 
 int main(int argc, char *argv[])
 {
+    // DConfig (the QML Config / SettingsDialog backend) takes its app id from
+    // DSG_APP_ID. Launchers may leave another application's value in the
+    // environment, so pin it to our own id.
+    qputenv("DSG_APP_ID", QByteArrayLiteral("dodo-store"));
+
     QGuiApplication app(argc, argv);
     app.setOrganizationName("deepin");
     app.setApplicationName("dodo-store");
@@ -116,11 +121,9 @@ int main(int argc, char *argv[])
     if (engine.rootObjects().isEmpty())
         return -1;
 
-    // Kick off the initial listing on the worker thread. When the remotes are
-    // known, load the default remote's app list.
-    QObject::connect(&backend, &FlatpakBackend::remotesChanged, &backend, [&backend] {
-        backend.refreshBrowse();
-    });
+    // Kick off the initial listing on the worker thread. The full browse
+    // catalog is only loaded when the Browse page is opened (see BrowsePage),
+    // so startup does not enrich thousands of apps on the GUI thread.
     backend.refreshInstalled();
 
     // Handle a link delivered with this (first) launch.

@@ -106,6 +106,7 @@ Item {
         function onBrowseLoaded() { root.refreshFromBackend() }
         function onInstalledLoaded() { root.refreshFromBackend() }
         function onUpdatesLoaded() { root.refreshFromBackend() }
+        function onHomeLoaded() { root.refreshFromBackend() }
     }
 
     // AppStream enrichment is asynchronous and may land after the page opened;

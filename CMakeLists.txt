@@ -6,7 +6,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 project(dodo-store
-    VERSION 0.3.0
+    VERSION 0.4.0
     DESCRIPTION "A Flatpak GUI store built with Qt6, QML and DTK"
     LANGUAGES CXX
 )
@@ -42,6 +42,8 @@ add_executable(dodo-store
     src/backend/flatpakworker.cpp
     src/backend/appstreampoolbridge.h
     src/backend/appstreampoolbridge.cpp
+    src/backend/storeapiclient.h
+    src/backend/storeapiclient.cpp
 
     src/models/appitem.h
     src/models/appitem.cpp
@@ -103,6 +105,19 @@ install(FILES packaging/dodo-store.desktop
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 install(FILES packaging/icons/hicolor/scalable/apps/dodo-store.svg
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps)
+
+# DConfig metadata backing the store API settings (Config in QML,
+# Dtk::Core::DConfig in C++). appId is the executable name.
+install(FILES packaging/dsg/configs/dodo-store/dodo-store.json
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/dsg/configs/dodo-store)
+
+# Keep a copy in the build tree: run with DSG_DATA_DIRS=<build>/dsg to use it.
+add_custom_target(dodo-store-dconfig ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${CMAKE_CURRENT_BINARY_DIR}/dsg/configs/dodo-store"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/dsg/configs/dodo-store/dodo-store.json"
+            "${CMAKE_CURRENT_BINARY_DIR}/dsg/configs/dodo-store/dodo-store.json")
 
 enable_testing()
 add_subdirectory(tests)
