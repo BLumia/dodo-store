@@ -32,6 +32,7 @@ FlatpakBackend::FlatpakBackend(QObject *parent)
     , m_newModel(new AppListModel(this))
     , m_updatedModel(new AppListModel(this))
     , m_updatesModel(new AppListModel(this))
+    , m_runtimeUpdatesModel(new AppListModel(this))
     , m_storeApi(new StoreApiClient(this))
 {
     // browseListModel is a filtered view of browseModel; browseModel owns the
@@ -91,6 +92,7 @@ QString FlatpakBackend::popularStatus() const { return m_popularStatus; }
 QString FlatpakBackend::newStatus() const { return m_newStatus; }
 QString FlatpakBackend::updatedStatus() const { return m_updatedStatus; }
 AppListModel *FlatpakBackend::updatesModel() const { return m_updatesModel; }
+AppListModel *FlatpakBackend::runtimeUpdatesModel() const { return m_runtimeUpdatesModel; }
 
 int FlatpakBackend::applicationUpdateCount() const
 {
@@ -514,6 +516,8 @@ void FlatpakBackend::refreshMetadata()
         m_appstream->enrich(item);
     for (auto *item : m_updatesModel->items())
         m_appstream->enrich(item);
+    for (auto *item : m_runtimeUpdatesModel->items())
+        m_appstream->enrich(item);
     Q_EMIT installedLoaded();
     Q_EMIT browseLoaded();
     Q_EMIT updatesLoaded();
@@ -704,22 +708,27 @@ void FlatpakBackend::onInstalledRefsReady(QList<AppItem *> items)
 
 void FlatpakBackend::onUpdatesRefsReady(QList<AppItem *> items)
 {
-    // Applications first, then runtimes. The Updates page groups the rows with
-    // ListView sections, which require each group's rows to be contiguous.
-    QList<AppItem *> ordered;
-    ordered.reserve(items.size());
+    QList<AppItem *> appUpdates;
+    QList<AppItem *> runtimeUpdates;
+    appUpdates.reserve(items.size());
+    runtimeUpdates.reserve(items.size());
+
     for (AppItem *item : items) {
-        if (item && !item->isRuntime())
-            ordered.append(item);
-    }
-    for (AppItem *item : items) {
-        if (item && item->isRuntime())
-            ordered.append(item);
+        if (!item)
+            continue;
+
+        if (item->isRuntime())
+            runtimeUpdates.append(item);
+        else
+            appUpdates.append(item);
     }
 
     m_updatesModel->clear();
-    m_updatesModel->appendItems(ordered);
+    m_runtimeUpdatesModel->clear();
+    m_updatesModel->appendItems(appUpdates);
+    m_runtimeUpdatesModel->appendItems(runtimeUpdates);
     enrichBatch(m_updatesModel, 0);
+    enrichBatch(m_runtimeUpdatesModel, 0);
     setBusy(false);
     Q_EMIT updatesLoaded();
 }
@@ -833,6 +842,7 @@ void FlatpakBackend::onAppStreamLoaded(bool success)
     enrichBatch(m_installedModel, 0);
     enrichBatch(m_browseModel, 0);
     enrichBatch(m_updatesModel, 0);
+    enrichBatch(m_runtimeUpdatesModel, 0);
 
     // Home items may have been created before the AppStream pool was ready.
     for (AppListModel *model : {m_trendingModel, m_popularModel, m_newModel,
@@ -850,7 +860,6 @@ void FlatpakBackend::onAppStreamLoaded(bool success)
         searchBrowse(m_browseSearchTerm);
     else if (m_browseCategoryActive)
         showBrowseCategory(m_browseCategory);
-
     Q_EMIT installedLoaded();
     Q_EMIT browseLoaded();
     Q_EMIT updatesLoaded();

@@ -722,10 +722,28 @@ void FlatpakWorker::loadUpdates()
 
     QList<AppItem *> items;
     items.reserve(refs->len);
+
+    // Flatpak may return the same update ref more than once. Keep one entry
+    // per complete ref identity so distinct architectures, branches, or
+    // remotes are not accidentally collapsed.
+    QSet<QString> seenRefs;
     for (guint i = 0; i < refs->len; ++i) {
         FlatpakInstalledRef *ref = static_cast<FlatpakInstalledRef *>(g_ptr_array_index(refs, i));
         if (!ref)
             continue;
+
+        const QString kind = flatpak_ref_get_kind(FLATPAK_REF(ref)) == FLATPAK_REF_KIND_RUNTIME
+            ? QStringLiteral("runtime") : QStringLiteral("app");
+        const QString name = QString::fromUtf8(flatpak_ref_get_name(FLATPAK_REF(ref)));
+        const QString arch = QString::fromUtf8(flatpak_ref_get_arch(FLATPAK_REF(ref)));
+        const QString branch = QString::fromUtf8(flatpak_ref_get_branch(FLATPAK_REF(ref)));
+        const QString remote = QString::fromUtf8(flatpak_installed_ref_get_origin(ref));
+        const QString refKey = remote + QLatin1Char(':') + kind + QLatin1Char(':')
+            + name + QLatin1Char(':') + arch + QLatin1Char(':') + branch;
+        if (seenRefs.contains(refKey))
+            continue;
+        seenRefs.insert(refKey);
+
         AppItem *item = d->makeInstalledItem(ref);
         item->setUpdateAvailable(true);
         items.append(item);

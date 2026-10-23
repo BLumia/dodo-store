@@ -45,6 +45,8 @@ class FlatpakBackend : public QObject
     // Updates for both applications and runtimes; applications are listed first
     // so the Updates page can group them with ListView sections.
     Q_PROPERTY(AppListModel *updatesModel READ updatesModel CONSTANT)
+
+    Q_PROPERTY(AppListModel *runtimeUpdatesModel READ runtimeUpdatesModel CONSTANT)
     Q_PROPERTY(int applicationUpdateCount READ applicationUpdateCount NOTIFY updatesLoaded)
 
     Q_PROPERTY(QStringList remotes READ remotes NOTIFY remotesChanged)
@@ -74,6 +76,8 @@ public:
     QString newStatus() const;
     QString updatedStatus() const;
     AppListModel *updatesModel() const;
+
+    AppListModel *runtimeUpdatesModel() const;
     int applicationUpdateCount() const;
 
     QStringList remotes() const;
@@ -226,6 +230,7 @@ private:
     AppListModel *m_newModel = nullptr;
     AppListModel *m_updatedModel = nullptr;
     AppListModel *m_updatesModel = nullptr;
+    AppListModel *m_runtimeUpdatesModel = nullptr;
 
     StoreApiClient *m_storeApi = nullptr;
     bool m_storeApiEnabled = true;

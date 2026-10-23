@@ -35,7 +35,8 @@ Item {
             }
             Button {
                 text: qsTr("Update All")
-                enabled: flatpakBackend.updatesModel.count > 0 && !flatpakBackend.busy
+                enabled: (flatpakBackend.updatesModel.count + flatpakBackend.runtimeUpdatesModel.count) > 0
+                         && !flatpakBackend.busy
                 onClicked: flatpakBackend.updateAll()
             }
             Button {
@@ -55,13 +56,18 @@ Item {
             visible: running
         }
 
-        // One list for both kinds of update, grouped with ListView sections.
-        // The backend keeps application rows before runtime rows so each
-        // section is contiguous (isRuntime false first, then true).
-        ListView {
-            id: list
+        Label {
+            visible: flatpakBackend.updatesModel.count > 0
             Layout.fillWidth: true
-            Layout.fillHeight: true
+            text: qsTr("Applications")
+            font: DTK.fontManager.t6
+            color: palette.windowText
+        }
+        ListView {
+            id: appList
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.min(contentHeight, 360)
+            Layout.minimumHeight: 0
             clip: true
             spacing: 4
             model: flatpakBackend.updatesModel
@@ -98,7 +104,33 @@ Item {
         }
 
         Label {
-            visible: flatpakBackend.updatesModel.count === 0 && !flatpakBackend.busy
+        Label {
+            visible: flatpakBackend.runtimeUpdatesModel.count > 0
+            Layout.fillWidth: true
+            text: qsTr("Runtimes and dependencies")
+            font: DTK.fontManager.t6
+            color: palette.windowText
+        }
+
+        ListView {
+            id: runtimeList
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.min(contentHeight, 180)
+            visible: count > 0
+            clip: true
+            spacing: 4
+            model: flatpakBackend.runtimeUpdatesModel
+            delegate: AppListItem {
+                width: runtimeList.width
+                actionText: ""
+                onClicked: {}
+            }
+        }
+
+        Label {
+            visible: flatpakBackend.updatesModel.count === 0
+                     && flatpakBackend.runtimeUpdatesModel.count === 0
+                     && !flatpakBackend.busy
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("You're up to date.")
             color: palette.windowText
