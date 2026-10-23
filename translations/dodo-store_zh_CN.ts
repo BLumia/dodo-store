@@ -282,32 +282,47 @@
 <context>
     <name>UpdatesPage</name>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="24"/>
-        <source>%1 available updates</source>
-        <translation>有 %1 个可用更新</translation>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="29"/>
+        <source>%1 application updates</source>
+        <translation>%1 个应用更新</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="29"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="31"/>
+        <source> · %1 runtime updates</source>
+        <translation> · %1 个运行时更新</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="37"/>
         <source>Update All</source>
         <translation>全部更新</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="34"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="42"/>
         <source>Check for updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="38"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="46"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="59"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="76"/>
+        <source>Runtimes and dependencies</source>
+        <translation>运行时与依赖</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="77"/>
+        <source>Applications</source>
+        <translation>应用</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="88"/>
         <source>Update</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="71"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="103"/>
         <source>You&apos;re up to date.</source>
         <translation>已是最新版本。</translation>
     </message>

@@ -24,9 +24,9 @@ class FlatpakBackend : public QObject
     Q_OBJECT
     Q_PROPERTY(AppListModel *installedModel READ installedModel CONSTANT)
     Q_PROPERTY(AppListModel *browseModel READ browseModel CONSTANT)
+    // Updates for both applications and runtimes; applications are listed first
+    // so the Updates page can group them with ListView sections.
     Q_PROPERTY(AppListModel *updatesModel READ updatesModel CONSTANT)
-
-    Q_PROPERTY(AppListModel *runtimeUpdatesModel READ runtimeUpdatesModel CONSTANT)
     Q_PROPERTY(int applicationUpdateCount READ applicationUpdateCount NOTIFY updatesLoaded)
 
     Q_PROPERTY(QStringList remotes READ remotes NOTIFY remotesChanged)
@@ -46,8 +46,6 @@ public:
     AppListModel *installedModel() const;
     AppListModel *browseModel() const;
     AppListModel *updatesModel() const;
-
-    AppListModel *runtimeUpdatesModel() const;
     int applicationUpdateCount() const;
 
     QStringList remotes() const;
@@ -161,7 +159,6 @@ private:
     AppListModel *m_installedModel = nullptr;
     AppListModel *m_browseModel = nullptr;
     AppListModel *m_updatesModel = nullptr;
-    AppListModel *m_runtimeUpdatesModel = nullptr;
 
     QStringList m_remotes;
     QVariantList m_remotesInfo;

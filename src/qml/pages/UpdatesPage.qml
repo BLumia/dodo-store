@@ -11,6 +11,11 @@ Item {
     id: root
     property var openDetail: null
 
+    // The model holds application updates first, then runtime updates. This
+    // keeps the header counts and the "Update All" state without a second model.
+    readonly property int runtimeUpdateCount:
+        Math.max(0, flatpakBackend.updatesModel.count - flatpakBackend.applicationUpdateCount)
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 16
@@ -21,17 +26,16 @@ Item {
             spacing: 8
             Label {
                 Layout.fillWidth: true
-                text: qsTr("%1 application updates").arg(flatpakBackend.updatesModel.count)
-                      + (flatpakBackend.runtimeUpdatesModel.count > 0
-                         ? qsTr(" · %1 runtime updates").arg(flatpakBackend.runtimeUpdatesModel.count)
+                text: qsTr("%1 application updates").arg(flatpakBackend.applicationUpdateCount)
+                      + (root.runtimeUpdateCount > 0
+                         ? qsTr(" · %1 runtime updates").arg(root.runtimeUpdateCount)
                          : "")
                 font: DTK.fontManager.t8
                 color: palette.windowText
             }
             Button {
                 text: qsTr("Update All")
-                enabled: (flatpakBackend.updatesModel.count + flatpakBackend.runtimeUpdatesModel.count) > 0
-                         && !flatpakBackend.busy
+                enabled: flatpakBackend.updatesModel.count > 0 && !flatpakBackend.busy
                 onClicked: flatpakBackend.updateAll()
             }
             Button {
@@ -51,60 +55,50 @@ Item {
             visible: running
         }
 
-        Label {
-            visible: flatpakBackend.updatesModel.count > 0
-            Layout.fillWidth: true
-            text: qsTr("Applications")
-            font: DTK.fontManager.t6
-            color: palette.windowText
-        }
-
+        // One list for both kinds of update, grouped with ListView sections.
+        // The backend keeps application rows before runtime rows so each
+        // section is contiguous (isRuntime false first, then true).
         ListView {
-            id: appList
+            id: list
             Layout.fillWidth: true
-            Layout.preferredHeight: Math.min(contentHeight, 360)
-            Layout.minimumHeight: 0
+            Layout.fillHeight: true
             clip: true
             spacing: 4
             model: flatpakBackend.updatesModel
+
+            section.property: "isRuntime"
+            section.delegate: Label {
+                width: list.width
+                height: 36
+                leftPadding: 4
+                verticalAlignment: Text.AlignBottom
+                text: String(section) === "true"
+                      ? qsTr("Runtimes and dependencies")
+                      : qsTr("Applications")
+                font: DTK.fontManager.t6
+                color: palette.windowText
+                opacity: 0.85
+            }
+
             delegate: AppListItem {
-                width: appList.width
-                actionText: qsTr("Update")
+                width: list.width
+                // Runtimes are updated through Update All / as dependencies,
+                // so only applications get a per-row Update button and a
+                // detail page.
+                actionText: model.isRuntime ? "" : qsTr("Update")
                 onClicked: {
-                    if (root.openDetail)
+                    if (!model.isRuntime && root.openDetail)
                         root.openDetail(model.item)
                 }
-                onActionClicked: flatpakBackend.updateApp(model.appId, model.branch, model.arch)
+                onActionClicked: {
+                    if (!model.isRuntime)
+                        flatpakBackend.updateApp(model.appId, model.branch, model.arch)
+                }
             }
         }
 
         Label {
-            visible: flatpakBackend.runtimeUpdatesModel.count > 0
-            Layout.fillWidth: true
-            text: qsTr("Runtimes and dependencies")
-            font: DTK.fontManager.t6
-            color: palette.windowText
-        }
-
-        ListView {
-            id: runtimeList
-            Layout.fillWidth: true
-            Layout.preferredHeight: Math.min(contentHeight, 180)
-            visible: count > 0
-            clip: true
-            spacing: 4
-            model: flatpakBackend.runtimeUpdatesModel
-            delegate: AppListItem {
-                width: runtimeList.width
-                actionText: ""
-                onClicked: {}
-            }
-        }
-
-        Label {
-            visible: flatpakBackend.updatesModel.count === 0
-                     && flatpakBackend.runtimeUpdatesModel.count === 0
-                     && !flatpakBackend.busy
+            visible: flatpakBackend.updatesModel.count === 0 && !flatpakBackend.busy
             Layout.alignment: Qt.AlignHCenter
             text: qsTr("You're up to date.")
             color: palette.windowText

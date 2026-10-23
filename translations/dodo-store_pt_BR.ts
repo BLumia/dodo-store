@@ -282,32 +282,47 @@
 <context>
     <name>UpdatesPage</name>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="24"/>
-        <source>%1 available updates</source>
-        <translation>%1 atualizações disponíveis</translation>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="29"/>
+        <source>%1 application updates</source>
+        <translation>%1 atualizações de aplicativos</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="29"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="31"/>
+        <source> · %1 runtime updates</source>
+        <translation> · %1 atualizações de runtime</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="37"/>
         <source>Update All</source>
         <translation>Atualizar tudo</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="34"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="42"/>
         <source>Check for updates</source>
         <translation>Verificar atualizações</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="38"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="46"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="59"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="76"/>
+        <source>Runtimes and dependencies</source>
+        <translation>Runtimes e dependências</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="77"/>
+        <source>Applications</source>
+        <translation>Aplicativos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="88"/>
         <source>Update</source>
         <translation>Atualizar</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/UpdatesPage.qml" line="71"/>
+        <location filename="../src/qml/pages/UpdatesPage.qml" line="103"/>
         <source>You&apos;re up to date.</source>
         <translation>Todos os aplicativos estão atualizados.</translation>
     </message>

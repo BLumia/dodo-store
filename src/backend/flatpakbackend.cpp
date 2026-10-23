@@ -23,7 +23,6 @@ FlatpakBackend::FlatpakBackend(QObject *parent)
     , m_installedModel(new AppListModel(this))
     , m_browseModel(new AppListModel(this))
     , m_updatesModel(new AppListModel(this))
-    , m_runtimeUpdatesModel(new AppListModel(this))
 {
     qRegisterMetaType<QList<AppItem *>>("QList<AppItem*>");
 
@@ -61,7 +60,6 @@ FlatpakBackend::~FlatpakBackend()
 AppListModel *FlatpakBackend::installedModel() const { return m_installedModel; }
 AppListModel *FlatpakBackend::browseModel() const { return m_browseModel; }
 AppListModel *FlatpakBackend::updatesModel() const { return m_updatesModel; }
-AppListModel *FlatpakBackend::runtimeUpdatesModel() const { return m_runtimeUpdatesModel; }
 
 int FlatpakBackend::applicationUpdateCount() const
 {
@@ -128,8 +126,6 @@ void FlatpakBackend::refreshMetadata()
     for (auto *item : m_browseModel->items())
         m_appstream->enrich(item);
     for (auto *item : m_updatesModel->items())
-        m_appstream->enrich(item);
-    for (auto *item : m_runtimeUpdatesModel->items())
         m_appstream->enrich(item);
     Q_EMIT installedLoaded();
     Q_EMIT browseLoaded();
@@ -318,23 +314,22 @@ void FlatpakBackend::onInstalledRefsReady(QList<AppItem *> items)
 
 void FlatpakBackend::onUpdatesRefsReady(QList<AppItem *> items)
 {
-    QList<AppItem *> appUpdates;
-    QList<AppItem *> runtimeUpdates;
-    appUpdates.reserve(items.size());
-    runtimeUpdates.reserve(items.size());
+    // Applications first, then runtimes. The Updates page groups the rows with
+    // ListView sections, which require each group's rows to be contiguous.
+    QList<AppItem *> ordered;
+    ordered.reserve(items.size());
+    for (AppItem *item : items) {
+        if (item && !item->isRuntime())
+            ordered.append(item);
+    }
     for (AppItem *item : items) {
         if (item && item->isRuntime())
-            runtimeUpdates.append(item);
-        else if (item)
-            appUpdates.append(item);
+            ordered.append(item);
     }
 
     m_updatesModel->clear();
-    m_runtimeUpdatesModel->clear();
-    m_updatesModel->appendItems(appUpdates);
-    m_runtimeUpdatesModel->appendItems(runtimeUpdates);
+    m_updatesModel->appendItems(ordered);
     enrichBatch(m_updatesModel, 0);
-    enrichBatch(m_runtimeUpdatesModel, 0);
     setBusy(false);
     Q_EMIT updatesLoaded();
 }
@@ -434,7 +429,6 @@ void FlatpakBackend::onAppStreamLoaded(bool success)
     enrichBatch(m_installedModel, 0);
     enrichBatch(m_browseModel, 0);
     enrichBatch(m_updatesModel, 0);
-    enrichBatch(m_runtimeUpdatesModel, 0);
     Q_EMIT installedLoaded();
     Q_EMIT browseLoaded();
     Q_EMIT updatesLoaded();
