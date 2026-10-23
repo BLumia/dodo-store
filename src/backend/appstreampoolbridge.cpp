@@ -8,6 +8,8 @@
 #include <QDebug>
 #include <QHash>
 #include <QUrl>
+#include <QDateTime>
+#include <algorithm>
 
 #include <AppStreamQt/component.h>
 #include <AppStreamQt/developer.h>
@@ -150,6 +152,53 @@ QStringList AppStreamPoolBridge::appIdsInCategory(const QString &category) const
         const QString id = comp.id();
         if (!id.isEmpty())
             ids.append(id);
+    }
+    return ids;
+}
+
+bool AppStreamPoolBridge::hasComponent(const QString &appId) const
+{
+    return m_loaded && !appId.isEmpty() && m_pool.componentsById(appId).size() > 0;
+}
+
+QStringList AppStreamPoolBridge::recentlyUpdatedAppIds(int limit) const
+{
+    if (!m_loaded || limit <= 0)
+        return {};
+
+    struct Entry {
+        QString id;
+        qint64 timestamp = 0;
+    };
+
+    QList<Entry> entries;
+    const AppStream::ComponentBox box = m_pool.components();
+    entries.reserve(box.size());
+    for (const auto &comp : box) {
+        if (comp.kind() != AppStream::Component::KindDesktopApp)
+            continue;
+
+        const QList<AppStream::Release> releases = comp.releasesPlain().entries();
+        qint64 newest = 0;
+        for (const auto &release : releases) {
+            const QDateTime timestamp = release.timestamp();
+            if (timestamp.isValid())
+                newest = qMax(newest, timestamp.toSecsSinceEpoch());
+        }
+        if (newest > 0)
+            entries.append({comp.id(), newest});
+    }
+
+    std::sort(entries.begin(), entries.end(), [](const Entry &a, const Entry &b) {
+        return a.timestamp > b.timestamp;
+    });
+
+    QStringList ids;
+    ids.reserve(qMin(limit, entries.size()));
+    for (const Entry &entry : entries) {
+        if (ids.size() >= limit)
+            break;
+        ids.append(entry.id);
     }
     return ids;
 }

@@ -66,6 +66,13 @@ Item {
         appsGrid.positionViewAtBeginning()
     }
 
+    // Load the remote catalog lazily: Browse is hidden at startup, so this
+    // keeps the full catalog out of the startup path.
+    onVisibleChanged: {
+        if (visible)
+            flatpakBackend.refreshBrowse()
+    }
+
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 16

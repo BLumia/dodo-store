@@ -9,6 +9,7 @@ import QtQuick.Controls 2.15
 import org.deepin.dtk 1.0
 import org.deepin.dtk 1.0 as D
 import org.deepin.dtk.style 1.0 as DS
+import org.deepin.dtk.settings 1.0 as Settings
 import "pages"
 import "components"
 
@@ -30,6 +31,9 @@ ApplicationWindow {
     color: "transparent"
 
     property int pageIndex: 0
+    // Set once the DConfig-backed settings object is ready; guards the change
+    // handlers while DConfig populates it during construction.
+    property bool storeSettingsReady: false
 
     // The page instances hosted by the right-hand StackView, one per tab.
     property var pageStack: [null, null, null, null, null]
@@ -60,6 +64,14 @@ ApplicationWindow {
         DTK.sendMessage(root, text)
     }
 
+    // Push the persisted store API settings to the backend. Called on startup
+    // and whenever DConfig reports a change.
+    function applyStoreSettings() {
+        flatpakBackend.configureStoreApi(storeSettings.apiEnabled,
+                                         storeSettings.apiBaseUrl,
+                                         storeSettings.apiProxy)
+    }
+
     Connections {
         target: flatpakBackend
         function onOperationFinished(ref, success, error) {
@@ -82,6 +94,9 @@ ApplicationWindow {
         function onLaunchFinished(success, name, error) {
             if (!success)
                 root.showToast(qsTr("Failed to open %1: %2").arg(name).arg(error))
+        }
+        function onHomeRefreshFailed(error) {
+            root.showToast(qsTr("Store API refresh failed, showing cached data: %1").arg(error))
         }
         // A "flatpak+https" web link resolved to an app: open its detail page.
         function onOpenAppRequested(appId, branch) {
@@ -145,6 +160,19 @@ ApplicationWindow {
             Item { Layout.fillWidth: true }
         }
 
+        menu: Menu {
+            MenuItem {
+                text: qsTr("Settings")
+                onTriggered: settingsDialog.show()
+            }
+            MenuSeparator {}
+            ThemeMenu {}
+            MenuSeparator {}
+            HelpAction {}
+            AboutAction { aboutDialog: titleBar.aboutDialog }
+            QuitAction {}
+        }
+
         aboutDialog: AboutDialog {
             productName: qsTr("Dodo Store")
             productIcon: "application-x-executable"
@@ -153,6 +181,65 @@ ApplicationWindow {
             websiteLink: ""
             license: qsTr("Released under LGPL-3.0-or-later.")
         }
+    }
+
+    // Store API settings, persisted through DConfig. The metadata lives in
+    // packaging/dsg/configs/dodo-store/dodo-store.json.
+    Config {
+        id: storeSettings
+        name: "dodo-store"
+
+        property bool apiEnabled: true
+        property string apiBaseUrl: "https://flathub.org/api/v2"
+        property string apiProxy: ""
+
+        // DConfig fills the properties above while the Config is still being
+        // constructed; applying them from a change handler at that point would
+        // re-enter the half-built object (and crash). Wait for completion.
+        Component.onCompleted: {
+            root.applyStoreSettings()
+            root.storeSettingsReady = true
+        }
+        onApiEnabledChanged: if (root.storeSettingsReady) root.applyStoreSettings()
+        onApiBaseUrlChanged: if (root.storeSettingsReady) root.applyStoreSettings()
+        onApiProxyChanged: if (root.storeSettingsReady) root.applyStoreSettings()
+    }
+
+    Settings.SettingsDialog {
+        id: settingsDialog
+        width: 720
+        height: 520
+        config: storeSettings
+
+        groups: [
+            Settings.SettingsGroup {
+                key: "store"
+                name: qsTr("Store")
+
+                children: [
+                    Settings.SettingsGroup {
+                        key: "api"
+                        name: qsTr("Online content")
+
+                        Settings.SettingsOption {
+                            key: "apiEnabled"
+                            name: qsTr("Enable store API")
+                            Settings.CheckBox {}
+                        }
+                        Settings.SettingsOption {
+                            key: "apiBaseUrl"
+                            name: qsTr("Store API address")
+                            Settings.LineEdit {}
+                        }
+                        Settings.SettingsOption {
+                            key: "apiProxy"
+                            name: qsTr("Proxy for the store API")
+                            Settings.LineEdit {}
+                        }
+                    }
+                ]
+            }
+        ]
     }
 
     // Window background: blurred translucent sidebar column on the left
