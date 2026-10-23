@@ -82,22 +82,92 @@
 <context>
     <name>BrowsePage</name>
     <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="28"/>
+        <source>All applications</source>
+        <translation>全部应用</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="29"/>
+        <source>Audio &amp; Video</source>
+        <translation>影音娱乐</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="30"/>
+        <source>Development</source>
+        <translation>开发工具</translation>
+    </message>
+    <message>
         <location filename="../src/qml/pages/BrowsePage.qml" line="31"/>
+        <source>Education</source>
+        <translation>教育</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="32"/>
+        <source>Games</source>
+        <translation>游戏</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="33"/>
+        <source>Graphics</source>
+        <translation>图形图像</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="34"/>
+        <source>Health &amp; Fitness</source>
+        <translation>健康与健身</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="35"/>
+        <source>Network</source>
+        <translation>网络</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="36"/>
+        <source>Office</source>
+        <translation>办公</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="37"/>
+        <source>Science</source>
+        <translation>科学</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="38"/>
+        <source>System</source>
+        <translation>系统</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="39"/>
+        <source>Utilities</source>
+        <translation>实用工具</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="83"/>
+        <source>Search results in %1</source>
+        <translation>「%1」中的搜索结果</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="84"/>
+        <source>Search results</source>
+        <translation>搜索结果</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="85"/>
         <source>Browse flatpak apps</source>
         <translation>浏览 Flatpak 应用</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/BrowsePage.qml" line="37"/>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="93"/>
         <source>Source:</source>
         <translation>来源：</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/BrowsePage.qml" line="105"/>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="214"/>
         <source>No Flatpak remotes configured.</source>
         <translation>未配置任何 Flatpak 远程源。</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/BrowsePage.qml" line="106"/>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="212"/>
         <source>No applications found.</source>
         <translation>未找到应用。</translation>
     </message>
@@ -331,7 +401,7 @@
     <name>main</name>
     <message>
         <location filename="../src/qml/main.qml" line="23"/>
-        <location filename="../src/qml/main.qml" line="140"/>
+        <location filename="../src/qml/main.qml" line="149"/>
         <source>Dodo Store</source>
         <translation>Dodo 应用商店</translation>
     </message>
@@ -381,57 +451,57 @@
         <translation>无法打开链接：%1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="132"/>
+        <location filename="../src/qml/main.qml" line="141"/>
         <source>Search applications</source>
         <translation>搜索应用</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="142"/>
+        <location filename="../src/qml/main.qml" line="151"/>
         <source>A Flatpak graphical application store built with Qt6, CMake, QML and DTK.</source>
         <translation>一款使用 Qt6、CMake、QML 和 DTK 构建的 Flatpak 图形化应用商店。</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="145"/>
+        <location filename="../src/qml/main.qml" line="154"/>
         <source>Released under LGPL-3.0-or-later.</source>
         <translation>以 LGPL-3.0-or-later 许可证发布。</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="210"/>
+        <location filename="../src/qml/main.qml" line="219"/>
         <source>Store</source>
         <translation>商店</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="220"/>
+        <location filename="../src/qml/main.qml" line="229"/>
         <source>Home</source>
         <translation>首页</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="221"/>
+        <location filename="../src/qml/main.qml" line="230"/>
         <source>Browse</source>
         <translation>浏览</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="237"/>
+        <location filename="../src/qml/main.qml" line="246"/>
         <source>Library</source>
         <translation>应用库</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="247"/>
+        <location filename="../src/qml/main.qml" line="256"/>
         <source>Installed</source>
         <translation>已安装</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="248"/>
+        <location filename="../src/qml/main.qml" line="257"/>
         <source>Updates</source>
         <translation>更新</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="285"/>
+        <location filename="../src/qml/main.qml" line="294"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="295"/>
+        <location filename="../src/qml/main.qml" line="304"/>
         <source>Remotes</source>
         <translation>远程源</translation>
     </message>

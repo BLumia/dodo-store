@@ -82,22 +82,92 @@
 <context>
     <name>BrowsePage</name>
     <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="28"/>
+        <source>All applications</source>
+        <translation>Todos os aplicativos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="29"/>
+        <source>Audio &amp; Video</source>
+        <translation>Áudio e vídeo</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="30"/>
+        <source>Development</source>
+        <translation>Desenvolvimento</translation>
+    </message>
+    <message>
         <location filename="../src/qml/pages/BrowsePage.qml" line="31"/>
+        <source>Education</source>
+        <translation>Educação</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="32"/>
+        <source>Games</source>
+        <translation>Jogos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="33"/>
+        <source>Graphics</source>
+        <translation>Gráficos</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="34"/>
+        <source>Health &amp; Fitness</source>
+        <translation>Saúde e fitness</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="35"/>
+        <source>Network</source>
+        <translation>Rede</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="36"/>
+        <source>Office</source>
+        <translation>Escritório</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="37"/>
+        <source>Science</source>
+        <translation>Ciência</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="38"/>
+        <source>System</source>
+        <translation>Sistema</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="39"/>
+        <source>Utilities</source>
+        <translation>Utilitários</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="83"/>
+        <source>Search results in %1</source>
+        <translation>Resultados da pesquisa em %1</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="84"/>
+        <source>Search results</source>
+        <translation>Resultados da pesquisa</translation>
+    </message>
+    <message>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="85"/>
         <source>Browse flatpak apps</source>
         <translation>Navegar pelos aplicativos Flatpak</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/BrowsePage.qml" line="37"/>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="93"/>
         <source>Source:</source>
         <translation>Fonte:</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/BrowsePage.qml" line="105"/>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="214"/>
         <source>No Flatpak remotes configured.</source>
         <translation>Nenhum repositório Flatpak configurado.</translation>
     </message>
     <message>
-        <location filename="../src/qml/pages/BrowsePage.qml" line="106"/>
+        <location filename="../src/qml/pages/BrowsePage.qml" line="212"/>
         <source>No applications found.</source>
         <translation>Nenhum aplicativo encontrado.</translation>
     </message>
@@ -331,7 +401,7 @@
     <name>main</name>
     <message>
         <location filename="../src/qml/main.qml" line="23"/>
-        <location filename="../src/qml/main.qml" line="140"/>
+        <location filename="../src/qml/main.qml" line="149"/>
         <source>Dodo Store</source>
         <translation>Dodo Store</translation>
     </message>
@@ -381,57 +451,57 @@
         <translation>Não foi possível abrir o link: %1</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="132"/>
+        <location filename="../src/qml/main.qml" line="141"/>
         <source>Search applications</source>
         <translation>Pesquisar aplicativos</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="142"/>
+        <location filename="../src/qml/main.qml" line="151"/>
         <source>A Flatpak graphical application store built with Qt6, CMake, QML and DTK.</source>
         <translation>Uma loja gráfica de aplicativos Flatpak desenvolvida com Qt 6, CMake, QML e DTK.</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="145"/>
+        <location filename="../src/qml/main.qml" line="154"/>
         <source>Released under LGPL-3.0-or-later.</source>
         <translation>Distribuído sob a licença LGPL-3.0 ou posterior.</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="210"/>
+        <location filename="../src/qml/main.qml" line="219"/>
         <source>Store</source>
         <translation>Loja</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="220"/>
+        <location filename="../src/qml/main.qml" line="229"/>
         <source>Home</source>
         <translation>Página Inicial</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="221"/>
+        <location filename="../src/qml/main.qml" line="230"/>
         <source>Browse</source>
         <translation>Navegar</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="237"/>
+        <location filename="../src/qml/main.qml" line="246"/>
         <source>Library</source>
         <translation>Biblioteca</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="247"/>
+        <location filename="../src/qml/main.qml" line="256"/>
         <source>Installed</source>
         <translation>Instalados</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="248"/>
+        <location filename="../src/qml/main.qml" line="257"/>
         <source>Updates</source>
         <translation>Atualizações</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="285"/>
+        <location filename="../src/qml/main.qml" line="294"/>
         <source>Settings</source>
         <translation>Configurações</translation>
     </message>
     <message>
-        <location filename="../src/qml/main.qml" line="295"/>
+        <location filename="../src/qml/main.qml" line="304"/>
         <source>Remotes</source>
         <translation>Repositórios</translation>
     </message>

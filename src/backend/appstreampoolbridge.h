@@ -28,6 +28,10 @@ public:
     // Enrich the given item from the pool. Returns true if any field changed.
     bool enrich(AppItem *item);
 
+    // App ids of the components carrying @p category (an AppStream category id
+    // such as "Game"). Used by the category view of the browse page.
+    QStringList appIdsInCategory(const QString &category) const;
+
 Q_SIGNALS:
     void loadFinished(bool success);
 

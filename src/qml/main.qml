@@ -108,8 +108,17 @@ ApplicationWindow {
 
             IconButton {
                 icon.name: "go-previous"
+                // Also navigates back from a Browse category, so the page does
+                // not need its own back button.
                 visible: mainStack.depth > 1
-                onClicked: mainStack.pop()
+                         || (root.pageIndex === 1 && browsePage.appsView
+                             && browsePage.searchText === "")
+                onClicked: {
+                    if (mainStack.depth > 1)
+                        mainStack.pop()
+                    else
+                        browsePage.backToCategories()
+                }
             }
 
             Item { Layout.fillWidth: true }

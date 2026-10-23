@@ -137,6 +137,23 @@ bool AppStreamPoolBridge::loaded() const
     return m_loaded;
 }
 
+QStringList AppStreamPoolBridge::appIdsInCategory(const QString &category) const
+{
+    QStringList ids;
+    if (!m_loaded || category.isEmpty())
+        return ids;
+
+    const AppStream::ComponentBox box =
+        m_pool.componentsByCategories(QStringList{category});
+    ids.reserve(box.size());
+    for (const auto &comp : box) {
+        const QString id = comp.id();
+        if (!id.isEmpty())
+            ids.append(id);
+    }
+    return ids;
+}
+
 bool AppStreamPoolBridge::enrich(AppItem *item)
 {
     if (!m_loaded || !item)

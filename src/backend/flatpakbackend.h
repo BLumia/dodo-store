@@ -24,6 +24,10 @@ class FlatpakBackend : public QObject
     Q_OBJECT
     Q_PROPERTY(AppListModel *installedModel READ installedModel CONSTANT)
     Q_PROPERTY(AppListModel *browseModel READ browseModel CONSTANT)
+    // Browse page listing: a filtered, incrementally populated view over
+    // browseModel (one category, or all applications). It references the items
+    // owned by browseModel and never deletes them.
+    Q_PROPERTY(AppListModel *browseListModel READ browseListModel CONSTANT)
     // Updates for both applications and runtimes; applications are listed first
     // so the Updates page can group them with ListView sections.
     Q_PROPERTY(AppListModel *updatesModel READ updatesModel CONSTANT)
@@ -45,6 +49,7 @@ public:
 
     AppListModel *installedModel() const;
     AppListModel *browseModel() const;
+    AppListModel *browseListModel() const;
     AppListModel *updatesModel() const;
     int applicationUpdateCount() const;
 
@@ -61,6 +66,17 @@ public:
     // Populate the browse model for the current remote (async).
     Q_INVOKABLE void refreshBrowse();
     Q_INVOKABLE void search(const QString &term);
+
+    // Browse page listing. showBrowseCategory() filters browseModel by an
+    // AppStream category id (empty = all applications) and fills browseListModel
+    // with the first chunk; loadMoreBrowse() appends the next chunk.
+    Q_INVOKABLE void showBrowseCategory(const QString &category);
+    Q_INVOKABLE void loadMoreBrowse();
+    // Search within the current listing: the selected category, or all
+    // applications when no category is active.
+    Q_INVOKABLE void searchBrowse(const QString &term);
+    // Leave the category listing (back to the category tiles).
+    Q_INVOKABLE void clearBrowseCategory();
 
     // Operations. Accepts appId, remote, branch, arch; resolves into the worker.
     Q_INVOKABLE void installApp(const QString &appId, const QString &remote,
@@ -158,7 +174,17 @@ private:
 
     AppListModel *m_installedModel = nullptr;
     AppListModel *m_browseModel = nullptr;
+    AppListModel *m_browseListModel = nullptr;
     AppListModel *m_updatesModel = nullptr;
+
+    // Items of the active category (unfiltered) and the currently displayed
+    // listing (category, or search results within it).
+    QList<AppItem *> m_browseCategoryItems;
+    QList<AppItem *> m_browseFiltered;
+    int m_browseShown = 0;
+    QString m_browseCategory;
+    QString m_browseSearchTerm;
+    bool m_browseCategoryActive = false;
 
     QStringList m_remotes;
     QVariantList m_remotesInfo;
