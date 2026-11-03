@@ -106,6 +106,7 @@ Item {
         function onBrowseLoaded() { root.refreshFromBackend() }
         function onInstalledLoaded() { root.refreshFromBackend() }
         function onUpdatesLoaded() { root.refreshFromBackend() }
+        function onHomeLoaded() { root.refreshFromBackend() }
     }
 
     // AppStream enrichment is asynchronous and may land after the page opened;
@@ -335,6 +336,33 @@ Item {
                                     flatpakBackend.installApp(root.appAppId, root.appRemote,
                                                               root.appBranch, root.appArch)
                             }
+                        }
+
+                        // Launch the installed app without changing its install state.
+                        Button {
+                            id: openButton
+                            visible: root.installed
+                            enabled: !flatpakBackend.busy
+                            implicitWidth: 112
+                            implicitHeight: 36
+                            text: qsTr("Open")
+                            contentItem: Text {
+                                text: openButton.text
+                                font: DTK.fontManager.t6
+                                color: "white"
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                elide: Text.ElideRight
+                            }
+                            background: Rectangle {
+                                radius: height / 2
+                                color: openButton.pressed
+                                       ? Qt.darker(palette.highlight, 1.15)
+                                       : palette.highlight
+                                opacity: openButton.enabled ? 1 : 0.5
+                            }
+                            onClicked: flatpakBackend.launchApp(root.appAppId,
+                                                                root.appBranch, root.appArch)
                         }
 
                         Button {

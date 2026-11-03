@@ -1,0 +1,36 @@
+{
+    "magic": "dsg.config.meta",
+    "version": "1.0",
+    "contents": {
+        "apiEnabled": {
+            "value": true,
+            "serial": 0,
+            "name": "Enable store API",
+            "name[zh_CN]": "启用应用商店 API",
+            "description": "Fetch the trending, popular, new and updated app lists from the store API. Disable it to keep the home page offline.",
+            "description[zh_CN]": "从应用商店 API 获取热门、最新等应用列表。关闭后首页保持离线。",
+            "permissions": "readwrite",
+            "visibility": "private"
+        },
+        "apiBaseUrl": {
+            "value": "https://flathub.org/api/v2",
+            "serial": 0,
+            "name": "Store API address",
+            "name[zh_CN]": "应用商店 API 地址",
+            "description": "Base URL of a Flathub-API-compatible endpoint.",
+            "description[zh_CN]": "兼容 Flathub API 的服务基础地址。",
+            "permissions": "readwrite",
+            "visibility": "private"
+        },
+        "apiProxy": {
+            "value": "",
+            "serial": 0,
+            "name": "Proxy for the store API",
+            "name[zh_CN]": "访问商店 API 的代理",
+            "description": "Empty for no proxy, or http://host:port / socks5://host:port.",
+            "description[zh_CN]": "留空表示不使用代理，或填写 http://主机:端口 / socks5://主机:端口。",
+            "permissions": "readwrite",
+            "visibility": "private"
+        }
+    }
+}

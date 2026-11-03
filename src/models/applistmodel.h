@@ -54,9 +54,16 @@ public:
     AppItem *itemAt(int row) const;
     int indexOfKey(const QString &key) const;
 
+    // By default the model owns (and deletes) its items on clear(). A model that
+    // only references items owned elsewhere (e.g. a filtered view of
+    // browseModel) must opt out to avoid double deletion.
+    void setOwnsItems(bool owns);
+    bool ownsItems() const;
+
 Q_SIGNALS:
     void countChanged();
 
 private:
     QList<AppItem *> m_items;
+    bool m_ownsItems = true;
 };

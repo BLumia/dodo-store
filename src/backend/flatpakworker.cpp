@@ -930,3 +930,30 @@ void FlatpakWorker::updateAll()
     d->setProgress(100, QString());
     Q_EMIT operationFinished(QString(), ok, err);
 }
+
+void FlatpakWorker::launch(const QString &name, const QString &arch,
+                           const QString &branch)
+{
+    FlatpakInstallation *inst = d->installation();
+    if (!inst) {
+        Q_EMIT launchFinished(false, name, QStringLiteral("Cannot open user installation"));
+        return;
+    }
+
+    const QByteArray nameUtf8 = name.toUtf8();
+    const QByteArray archUtf8 = arch.toUtf8();
+    const QByteArray branchUtf8 = branch.toUtf8();
+
+    g_autoptr(GError) error = nullptr;
+    // libflatpak starts the app with FLATPAK_RUN_FLAG_BACKGROUND: it returns
+    // once the app is running, so the app keeps running while the store stays
+    // open. libflatpak reaps the child itself.
+    const gboolean ok = flatpak_installation_launch(
+        inst, nameUtf8.constData(),
+        arch.isEmpty() ? nullptr : archUtf8.constData(),
+        branch.isEmpty() ? nullptr : branchUtf8.constData(),
+        nullptr, nullptr, &error);
+
+    Q_EMIT launchFinished(ok, name,
+                          error ? QString::fromUtf8(error->message) : QString());
+}
