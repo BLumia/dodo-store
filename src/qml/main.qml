@@ -340,7 +340,7 @@ ApplicationWindow {
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
                     icon.source: modelData.iconSource
-                    icon.color: palette.text
+                    icon.color: palette.windowText
                     icon.width: 20
                     icon.height: 20
                     checked: root.pageIndex === index
@@ -368,7 +368,7 @@ ApplicationWindow {
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
                     icon.source: modelData.iconSource
-                    icon.color: palette.text
+                    icon.color: palette.windowText
                     icon.width: 20
                     icon.height: 20
                     checked: root.pageIndex === modelData.page
@@ -416,7 +416,7 @@ ApplicationWindow {
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
                     icon.source: modelData.iconSource
-                    icon.color: palette.text
+                    icon.color: palette.windowText
                     icon.width: 20
                     icon.height: 20
                     checked: root.pageIndex === modelData.page
