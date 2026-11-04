@@ -14,7 +14,6 @@
 #include <QDebug>
 #include <QCoreApplication>
 #include <QThread>
-#include <QProcess>
 #include <QMetaType>
 #include <QSet>
 #include <QVariantMap>
@@ -94,36 +93,6 @@ bool readUri(const QString &url, QByteArray *out, QString *error)
 }
 
  
-// Mirrors `flatpak uninstall --user --unused -y` after a successful app
-// removal. Cleanup is best-effort: a cleanup failure must not turn a completed
-// uninstall into a failed operation.
-void cleanupUnusedRuntimes()
-{
-    QProcess process;
-    process.setProgram(QStringLiteral("flatpak"));
-    process.setArguments({QStringLiteral("uninstall"), QStringLiteral("--user"),
-                          QStringLiteral("--unused"), QStringLiteral("-y")});
-    process.start();
-
-    if (!process.waitForStarted()) {
-        qWarning() << "flatpak: cannot start unused-ref cleanup:" << process.errorString();
-        return;
-    }
-
-    if (!process.waitForFinished(-1)) {
-        qWarning() << "flatpak: unused-ref cleanup did not finish:" << process.errorString();
-        process.kill();
-        process.waitForFinished();
-        return;
-    }
-
-    if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
-        const QString output = QString::fromLocal8Bit(process.readAllStandardError()).trimmed();
-        qWarning() << "flatpak: unused-ref cleanup failed with exit code"
-                   << process.exitCode() << (output.isEmpty() ? QString() : output);
-    }
-}
-
 } // namespace
 
 class FlatpakWorkerPrivate
@@ -878,10 +847,48 @@ void FlatpakWorker::uninstall(const QString &kind, const QString &name,
     const bool ok = d->runTransaction(transaction, &err);
     d->setProgress(100, QString());
 
-    // Run cleanup only after the requested uninstall succeeded. Its failure is
-    // logged but does not change the result of the uninstall itself.
-    if (ok)
-        cleanupUnusedRuntimes();
+    // Remove refs that became unused after the application was uninstalled.
+    // Keep cleanup best-effort so it cannot change the requested uninstall result.
+    if (ok) {
+        g_autoptr(GError) cleanupError = nullptr;
+        g_autoptr(GPtrArray) unusedRefs = flatpak_installation_list_unused_refs(
+            inst, flatpak_get_default_arch(), d->cancellable, &cleanupError);
+
+        if (!unusedRefs) {
+            qWarning() << "flatpak: list unused refs failed:"
+                       << (cleanupError ? cleanupError->message : "unknown");
+        } else if (unusedRefs->len > 0) {
+            g_autoptr(FlatpakTransaction) cleanupTransaction =
+                flatpak_transaction_new_for_installation(inst, d->cancellable, &cleanupError);
+
+            if (!cleanupTransaction) {
+                qWarning() << "flatpak: create unused-ref cleanup transaction failed:"
+                           << (cleanupError ? cleanupError->message : "unknown");
+            } else {
+                bool queued = true;
+                for (guint i = 0; i < unusedRefs->len; ++i) {
+                    auto *unusedRef = FLATPAK_REF(g_ptr_array_index(unusedRefs, i));
+                    g_autofree char *unusedRefString = flatpak_ref_format_ref(unusedRef);
+                    if (!flatpak_transaction_add_uninstall(
+                            cleanupTransaction, unusedRefString, &cleanupError)) {
+                        qWarning() << "flatpak: could not queue unused ref"
+                                   << unusedRefString << ":"
+                                   << (cleanupError ? cleanupError->message : "unknown");
+                        queued = false;
+                        break;
+                    }
+                }
+
+                if (queued) {
+                    QString cleanupTransactionError;
+                    if (!d->runTransaction(cleanupTransaction, &cleanupTransactionError)) {
+                        qWarning() << "flatpak: unused-ref cleanup failed:"
+                                   << cleanupTransactionError;
+                    }
+                }
+            }
+        }
+    }
 
     Q_EMIT operationFinished(ref, ok, err);
 }
