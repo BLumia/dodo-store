@@ -367,7 +367,7 @@ ApplicationWindow {
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.source: modelData.iconSource
+                    icon.source: DTK.themeType === ApplicationHelper.LightType ? modelData.iconSource : modelData.darkIconSource
                     icon.color: palette.windowText
                     icon.width: 20
                     icon.height: 20
@@ -415,7 +415,7 @@ ApplicationWindow {
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.source: modelData.iconSource
+                    icon.source: DTK.themeType === ApplicationHelper.LightType ? modelData.iconSource : modelData.darkIconSource
                     icon.color: palette.windowText
                     icon.width: 20
                     icon.height: 20
