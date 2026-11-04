@@ -15,5 +15,10 @@
         <file>qml/icons/installed.svg</file>
         <file>qml/icons/updates.svg</file>
         <file>qml/icons/remotes.svg</file>
+        <file>qml/icons/home-dark.svg</file>
+        <file>qml/icons/browse-dark.svg</file>
+        <file>qml/icons/installed-dark.svg</file>
+        <file>qml/icons/updates-dark.svg</file>
+        <file>qml/icons/remotes-dark.svg</file>
     </qresource>
 </RCC>
