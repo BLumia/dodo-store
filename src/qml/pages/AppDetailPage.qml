@@ -311,7 +311,7 @@ Item {
                             id: primaryButton
                             visible: !root.installed || root.updateAvailable
                             enabled: !flatpakBackend.busy
-                            implicitWidth: 112
+                            implicitWidth: 130
                             implicitHeight: 36
                             text: root.updateAvailable ? qsTr("Update") : qsTr("Install")
                             contentItem: Text {
@@ -325,8 +325,8 @@ Item {
                             background: Rectangle {
                                 radius: height / 2
                                 color: primaryButton.pressed
-                                       ? Qt.darker(palette.highlight, 1.15)
-                                       : palette.highlight
+                                       ? Qt.darker(root.updateAvailable ? "#2ca34a" : palette.highlight, 1.15)
+                                       : (root.updateAvailable ? "#2ca34a" : palette.highlight)
                                 opacity: primaryButton.enabled ? 1 : 0.5
                             }
                             onClicked: {
@@ -343,7 +343,7 @@ Item {
                             id: openButton
                             visible: root.installed
                             enabled: !flatpakBackend.busy
-                            implicitWidth: 112
+                            implicitWidth: 130
                             implicitHeight: 36
                             text: qsTr("Open")
                             contentItem: Text {
@@ -368,9 +368,15 @@ Item {
                         Button {
                             visible: root.installed
                             enabled: !flatpakBackend.busy
-                            implicitWidth: 112
+                            implicitWidth: 130
                             implicitHeight: 36
                             text: qsTr("Uninstall")
+                            background: Rectangle {
+                                radius: height / 2
+                                color: palette.button
+                                border.color: Qt.darker(palette.button, 1.08)
+                                opacity: enabled ? 1 : 0.5
+                            }
                             onClicked: flatpakBackend.uninstallApp(root.appAppId,
                                                                    root.appBranch, root.appArch)
                         }
