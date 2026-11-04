@@ -13,7 +13,6 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QStandardPaths>
-#include <QProcess>
 #include <QStringList>
 
 #include <DLog>
@@ -119,16 +118,6 @@ int main(int argc, char *argv[])
     // Handle a link delivered with this (first) launch.
     if (!webLink.isEmpty())
         backend.openFlatpakRefUrl(webLink);
-
-    // Also clean up unused user-level Flatpak refs when the store closes.
-    // Run detached so a slow repository operation does not delay application exit.
-    QObject::connect(&app, &QCoreApplication::aboutToQuit, [] {
-        if (!QProcess::startDetached(QStringLiteral("flatpak"),
-                                     {QStringLiteral("uninstall"), QStringLiteral("--user"),
-                                      QStringLiteral("--unused"), QStringLiteral("-y")})) {
-            qWarning() << "flatpak: could not start unused-ref cleanup on exit";
-        }
-    });
 
     return app.exec();
 }
