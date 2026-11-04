@@ -334,12 +334,13 @@ ApplicationWindow {
 
             Repeater {
                 model: [
-                    { label: qsTr("Home"), iconSource: "qrc:/qml/icons/home.svg" },
-                    { label: qsTr("Browse"), iconSource: "qrc:/qml/icons/browse.svg" }
+                    { label: qsTr("Home"), iconSource: "qrc:/qml/icons/home.svg", darkIconSource: "qrc:/qml/icons/home-dark.svg" },
+                    { label: qsTr("Browse"), iconSource: "qrc:/qml/icons/browse.svg", darkIconSource: "qrc:/qml/icons/browse-dark.svg" }
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.source: modelData.iconSource
+                    icon.source: DTK.themeType === ApplicationHelper.LightType ? modelData.iconSource : modelData.darkIconSource
+                    icon.color: palette.windowText
                     icon.width: 20
                     icon.height: 20
                     checked: root.pageIndex === index
@@ -361,12 +362,13 @@ ApplicationWindow {
 
             Repeater {
                 model: [
-                    { label: qsTr("Installed"), iconSource: "qrc:/qml/icons/installed.svg", page: 2 },
-                    { label: qsTr("Updates"), iconSource: "qrc:/qml/icons/updates.svg", page: 3 }
+                    { label: qsTr("Installed"), iconSource: "qrc:/qml/icons/installed.svg", darkIconSource: "qrc:/qml/icons/installed-dark.svg", page: 2 },
+                    { label: qsTr("Updates"), iconSource: "qrc:/qml/icons/updates.svg", darkIconSource: "qrc:/qml/icons/updates-dark.svg", page: 3 }
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.source: modelData.iconSource
+                    icon.source: DTK.themeType === ApplicationHelper.LightType ? modelData.iconSource : modelData.darkIconSource
+                    icon.color: palette.windowText
                     icon.width: 20
                     icon.height: 20
                     checked: root.pageIndex === modelData.page
@@ -409,11 +411,12 @@ ApplicationWindow {
 
             Repeater {
                 model: [
-                    { label: qsTr("Remotes"), iconSource: "qrc:/qml/icons/remotes.svg", page: 4 }
+                    { label: qsTr("Remotes"), iconSource: "qrc:/qml/icons/remotes.svg", darkIconSource: "qrc:/qml/icons/remotes-dark.svg", page: 4 }
                 ]
                 delegate: ItemDelegate {
                     Layout.fillWidth: true
-                    icon.source: modelData.iconSource
+                    icon.source: DTK.themeType === ApplicationHelper.LightType ? modelData.iconSource : modelData.darkIconSource
+                    icon.color: palette.windowText
                     icon.width: 20
                     icon.height: 20
                     checked: root.pageIndex === modelData.page
