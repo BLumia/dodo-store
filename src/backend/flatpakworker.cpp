@@ -92,6 +92,7 @@ bool readUri(const QString &url, QByteArray *out, QString *error)
     return true;
 }
 
+ 
 } // namespace
 
 class FlatpakWorkerPrivate
@@ -845,6 +846,50 @@ void FlatpakWorker::uninstall(const QString &kind, const QString &name,
     QString err;
     const bool ok = d->runTransaction(transaction, &err);
     d->setProgress(100, QString());
+
+    // Remove refs that became unused after the application was uninstalled.
+    // Keep cleanup best-effort so it cannot change the requested uninstall result.
+    if (ok) {
+        g_autoptr(GError) cleanupError = nullptr;
+        g_autoptr(GPtrArray) unusedRefs = flatpak_installation_list_unused_refs(
+            inst, flatpak_get_default_arch(), d->cancellable, &cleanupError);
+
+        if (!unusedRefs) {
+            qWarning() << "flatpak: list unused refs failed:"
+                       << (cleanupError ? cleanupError->message : "unknown");
+        } else if (unusedRefs->len > 0) {
+            g_autoptr(FlatpakTransaction) cleanupTransaction =
+                flatpak_transaction_new_for_installation(inst, d->cancellable, &cleanupError);
+
+            if (!cleanupTransaction) {
+                qWarning() << "flatpak: create unused-ref cleanup transaction failed:"
+                           << (cleanupError ? cleanupError->message : "unknown");
+            } else {
+                bool queued = true;
+                for (guint i = 0; i < unusedRefs->len; ++i) {
+                    auto *unusedRef = FLATPAK_REF(g_ptr_array_index(unusedRefs, i));
+                    g_autofree char *unusedRefString = flatpak_ref_format_ref(unusedRef);
+                    if (!flatpak_transaction_add_uninstall(
+                            cleanupTransaction, unusedRefString, &cleanupError)) {
+                        qWarning() << "flatpak: could not queue unused ref"
+                                   << unusedRefString << ":"
+                                   << (cleanupError ? cleanupError->message : "unknown");
+                        queued = false;
+                        break;
+                    }
+                }
+
+                if (queued) {
+                    QString cleanupTransactionError;
+                    if (!d->runTransaction(cleanupTransaction, &cleanupTransactionError)) {
+                        qWarning() << "flatpak: unused-ref cleanup failed:"
+                                   << cleanupTransactionError;
+                    }
+                }
+            }
+        }
+    }
+
     Q_EMIT operationFinished(ref, ok, err);
 }
 
