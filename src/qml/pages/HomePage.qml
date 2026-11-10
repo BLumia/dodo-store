@@ -6,6 +6,7 @@ import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import org.deepin.dtk 1.0
+import org.deepin.dtk.style 1.0 as DS
 import "../components"
 
 Item {
@@ -81,40 +82,61 @@ Item {
             }
         }
 
-        // Curated category tabs.
-        Row {
+        // Curated categories in a single segmented pill.
+        Item {
             Layout.alignment: Qt.AlignHCenter
-            spacing: 4
+            implicitWidth: root.tabKeys.length * 112
+            width: implicitWidth
+            height: 36
 
-            Repeater {
-                model: root.tabKeys
+            Rectangle {
+                anchors.fill: parent
+                radius: DS.Style.control.radius
+                color: Qt.alpha(palette.windowText, 0.06)
+                border.width: 1
+                border.color: Qt.alpha(palette.windowText, 0.08)
+            }
 
-                Button {
-                    id: tabButton
-                    text: root.tabLabel(modelData)
-                    checkable: true
-                    checked: index === root.currentIndex
-                    implicitHeight: 32
-                    leftPadding: 16
-                    rightPadding: 16
-                    onClicked: root.currentIndex = index
+            Rectangle {
+                x: root.currentIndex * width
+                width: parent.width / Math.max(1, root.tabKeys.length)
+                height: parent.height
+                radius: DS.Style.control.radius
+                color: palette.button
+                border.width: 1
+                border.color: Qt.alpha(palette.windowText, 0.10)
 
-                    contentItem: Text {
-                        text: tabButton.text
-                        font: DTK.fontManager.t7
-                        color: tabButton.checked ? palette.highlight
-                                                 : palette.windowText
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                Behavior on x {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
                     }
+                }
+            }
 
-                    background: Rectangle {
-                        radius: height / 2
-                        color: tabButton.checked
-                               ? Qt.alpha(palette.highlight, 0.16)
-                               : (tabButton.hovered
-                                  ? Qt.alpha(palette.windowText, 0.05)
-                                  : "transparent")
+            Row {
+                anchors.fill: parent
+
+                Repeater {
+                    model: root.tabKeys
+
+                    Item {
+                        width: parent.width / Math.max(1, root.tabKeys.length)
+                        height: parent.height
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: root.tabLabel(modelData)
+                            color: palette.windowText
+                            opacity: index === root.currentIndex ? 1.0 : 0.72
+                            font: DTK.fontManager.t6
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.currentIndex = index
+                        }
                     }
                 }
             }
