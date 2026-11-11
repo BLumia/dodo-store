@@ -314,21 +314,8 @@ Item {
                             implicitWidth: 130
                             implicitHeight: 36
                             text: root.updateAvailable ? qsTr("Update") : qsTr("Install")
-                            contentItem: Text {
-                                text: primaryButton.text
-                                font: DTK.fontManager.t6
-                                color: "white"
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                                elide: Text.ElideRight
-                            }
-                            background: Rectangle {
-                                radius: height / 2
-                                color: primaryButton.pressed
-                                       ? Qt.darker(root.updateAvailable ? "#2ca34a" : palette.highlight, 1.15)
-                                       : (root.updateAvailable ? "#2ca34a" : palette.highlight)
-                                opacity: primaryButton.enabled ? 1 : 0.5
-                            }
+                            // Keep highlighted text contrast for both actions.
+                            highlighted: true
                             onClicked: {
                                 if (root.updateAvailable)
                                     flatpakBackend.updateApp(root.appAppId, root.appBranch, root.appArch)
@@ -341,26 +328,12 @@ Item {
                         // Launch the installed app without changing its install state.
                         Button {
                             id: openButton
-                            visible: root.installed
+                            visible: root.installed && !root.updateAvailable
                             enabled: !flatpakBackend.busy
                             implicitWidth: 130
                             implicitHeight: 36
                             text: qsTr("Open")
-                            contentItem: Text {
-                                text: openButton.text
-                                font: DTK.fontManager.t6
-                                color: "white"
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                                elide: Text.ElideRight
-                            }
-                            background: Rectangle {
-                                radius: height / 2
-                                color: openButton.pressed
-                                       ? Qt.darker(palette.highlight, 1.15)
-                                       : palette.highlight
-                                opacity: openButton.enabled ? 1 : 0.5
-                            }
+                            highlighted: true
                             onClicked: flatpakBackend.launchApp(root.appAppId,
                                                                 root.appBranch, root.appArch)
                         }
@@ -371,12 +344,6 @@ Item {
                             implicitWidth: 130
                             implicitHeight: 36
                             text: qsTr("Uninstall")
-                            background: Rectangle {
-                                radius: height / 2
-                                color: palette.button
-                                border.color: Qt.darker(palette.button, 1.08)
-                                opacity: enabled ? 1 : 0.5
-                            }
                             onClicked: flatpakBackend.uninstallApp(root.appAppId,
                                                                    root.appBranch, root.appArch)
                         }
