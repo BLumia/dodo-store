@@ -25,6 +25,7 @@
 #include <QEventLoop>
 #include <QTimer>
 #include <QFile>
+#include <QSettings>
 #include <glib.h>
 #include <gio/gio.h>
 #include <flatpak.h>
@@ -98,11 +99,20 @@ bool readUri(const QString &url, QByteArray *out, QString *error)
 // remotes. The .flatpakrepo file supplies the repository URL and GPG key.
 bool ensureDefaultFlathubRemote(FlatpakInstallation *installation)
 {
+    // Remember that the first-run setup has been completed. This prevents the
+    // store from silently re-adding Flathub if the user later removes it.
+    QSettings settings;
+    const QString setupKey = QStringLiteral("flatpak/defaultFlathubInitialized");
+    if (settings.value(setupKey, false).toBool())
+        return true;
+
     g_autoptr(GError) error = nullptr;
     g_autoptr(FlatpakRemote) existing = flatpak_installation_get_remote_by_name(
         installation, "flathub", nullptr, &error);
-    if (existing)
+    if (existing) {
+        settings.setValue(setupKey, true);
         return true;
+    }
 
     // A missing remote is expected on a clean installation.
     g_clear_error(&error);
@@ -134,6 +144,7 @@ bool ensureDefaultFlathubRemote(FlatpakInstallation *installation)
         return false;
     }
 
+    settings.setValue(setupKey, true);
     qInfo() << "flatpak: added the default Flathub remote";
     return true;
 }
