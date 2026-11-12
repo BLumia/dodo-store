@@ -25,7 +25,6 @@
 #include <QEventLoop>
 #include <QTimer>
 #include <QFile>
-#include <QSettings>
 #include <glib.h>
 #include <gio/gio.h>
 #include <flatpak.h>
@@ -94,58 +93,64 @@ bool readUri(const QString &url, QByteArray *out, QString *error)
 }
 
 
-// Ensures the official Flathub remote exists in the per-user installation.
-// Existing configurations are left untouched, including intentionally disabled
-// remotes. The .flatpakrepo file supplies the repository URL and GPG key.
+// Ensures the per-user Flathub remote always matches the official configuration.
+// The official .flatpakrepo file is authoritative: an existing remote with the
+// same name is corrected, re-enabled, and made enumerable instead of trusting
+// settings that may have been entered incorrectly by the user.
 bool ensureDefaultFlathubRemote(FlatpakInstallation *installation)
 {
-    // Remember that the first-run setup has been completed. This prevents the
-    // store from silently re-adding Flathub if the user later removes it.
-    QSettings settings;
-    const QString setupKey = QStringLiteral("flatpak/defaultFlathubInitialized");
-    if (settings.value(setupKey, false).toBool())
+    // This function runs on the Flatpak worker thread. Once the official
+    // configuration has been applied successfully, avoid downloading it again
+    // for every remote refresh during this process. A new launch checks again.
+    static bool configuredThisSession = false;
+    if (configuredThisSession)
         return true;
-
-    g_autoptr(GError) error = nullptr;
-    g_autoptr(FlatpakRemote) existing = flatpak_installation_get_remote_by_name(
-        installation, "flathub", nullptr, &error);
-    if (existing) {
-        settings.setValue(setupKey, true);
-        return true;
-    }
-
-    // A missing remote is expected on a clean installation.
-    g_clear_error(&error);
 
     const QString repoFileUrl =
         QStringLiteral("https://dl.flathub.org/repo/flathub.flatpakrepo");
     QByteArray contents;
     QString fetchError;
     if (!readUri(repoFileUrl, &contents, &fetchError)) {
-        qWarning() << "flatpak: cannot download the default Flathub configuration:"
+        qWarning() << "flatpak: cannot download the official Flathub configuration:"
                    << fetchError;
         return false;
     }
 
+    g_autoptr(GError) error = nullptr;
     g_autoptr(GBytes) bytes = g_bytes_new(contents.constData(),
                                           static_cast<gsize>(contents.size()));
     g_autoptr(FlatpakRemote) remote =
         flatpak_remote_new_from_file("flathub", bytes, &error);
     if (!remote) {
-        qWarning() << "flatpak: cannot parse the default Flathub configuration:"
+        qWarning() << "flatpak: cannot parse the official Flathub configuration:"
                    << (error ? error->message : "unknown");
         return false;
     }
 
-    g_clear_error(&error);
-    if (!flatpak_installation_add_remote(installation, remote, TRUE, nullptr, &error)) {
-        qWarning() << "flatpak: cannot add the default Flathub remote:"
+    // The store requires Flathub to be enabled and enumerable. The repository
+    // file provides its canonical URL and signing key; force verification on.
+    flatpak_remote_set_disabled(remote, FALSE);
+    flatpak_remote_set_noenumerate(remote, FALSE);
+    flatpak_remote_set_gpg_verify(remote, TRUE);
+
+    g_autoptr(FlatpakRemote) existing = flatpak_installation_get_remote_by_name(
+        installation, "flathub", nullptr, &error);
+    gboolean ok = FALSE;
+    if (existing) {
+        ok = flatpak_installation_modify_remote(installation, remote, nullptr, &error);
+    } else {
+        g_clear_error(&error);
+        ok = flatpak_installation_add_remote(installation, remote, TRUE, nullptr, &error);
+    }
+
+    if (!ok) {
+        qWarning() << "flatpak: cannot apply the official Flathub configuration:"
                    << (error ? error->message : "unknown");
         return false;
     }
 
-    settings.setValue(setupKey, true);
-    qInfo() << "flatpak: added the default Flathub remote";
+    configuredThisSession = true;
+    qInfo() << "flatpak: official Flathub configuration applied";
     return true;
 }
 
