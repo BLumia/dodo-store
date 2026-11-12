@@ -92,6 +92,68 @@ bool readUri(const QString &url, QByteArray *out, QString *error)
     return true;
 }
 
+
+// Ensures the per-user Flathub remote always matches the official configuration.
+// The official .flatpakrepo file is authoritative: an existing remote with the
+// same name is corrected, re-enabled, and made enumerable instead of trusting
+// settings that may have been entered incorrectly by the user.
+bool ensureDefaultFlathubRemote(FlatpakInstallation *installation)
+{
+    // This function runs on the Flatpak worker thread. Once the official
+    // configuration has been applied successfully, avoid downloading it again
+    // for every remote refresh during this process. A new launch checks again.
+    static bool configuredThisSession = false;
+    if (configuredThisSession)
+        return true;
+
+    const QString repoFileUrl =
+        QStringLiteral("https://dl.flathub.org/repo/flathub.flatpakrepo");
+    QByteArray contents;
+    QString fetchError;
+    if (!readUri(repoFileUrl, &contents, &fetchError)) {
+        qWarning() << "flatpak: cannot download the official Flathub configuration:"
+                   << fetchError;
+        return false;
+    }
+
+    g_autoptr(GError) error = nullptr;
+    g_autoptr(GBytes) bytes = g_bytes_new(contents.constData(),
+                                          static_cast<gsize>(contents.size()));
+    g_autoptr(FlatpakRemote) remote =
+        flatpak_remote_new_from_file("flathub", bytes, &error);
+    if (!remote) {
+        qWarning() << "flatpak: cannot parse the official Flathub configuration:"
+                   << (error ? error->message : "unknown");
+        return false;
+    }
+
+    // The store requires Flathub to be enabled and enumerable. The repository
+    // file provides its canonical URL and signing key; force verification on.
+    flatpak_remote_set_disabled(remote, FALSE);
+    flatpak_remote_set_noenumerate(remote, FALSE);
+    flatpak_remote_set_gpg_verify(remote, TRUE);
+
+    g_autoptr(FlatpakRemote) existing = flatpak_installation_get_remote_by_name(
+        installation, "flathub", nullptr, &error);
+    gboolean ok = FALSE;
+    if (existing) {
+        ok = flatpak_installation_modify_remote(installation, remote, nullptr, &error);
+    } else {
+        g_clear_error(&error);
+        ok = flatpak_installation_add_remote(installation, remote, TRUE, nullptr, &error);
+    }
+
+    if (!ok) {
+        qWarning() << "flatpak: cannot apply the official Flathub configuration:"
+                   << (error ? error->message : "unknown");
+        return false;
+    }
+
+    configuredThisSession = true;
+    qInfo() << "flatpak: official Flathub configuration applied";
+    return true;
+}
+
  
 } // namespace
 
@@ -406,6 +468,11 @@ void FlatpakWorker::loadRemotes()
         Q_EMIT remotesReady({});
         return;
     }
+
+    // Make Flathub available on clean installations before listing sources.
+    // This runs on the Flatpak worker thread, so network access does not block
+    // the user interface.
+    ensureDefaultFlathubRemote(inst);
 
     g_autoptr(GError) error = nullptr;
     g_autoptr(GPtrArray) remotes = flatpak_installation_list_remotes(inst, nullptr, &error);
