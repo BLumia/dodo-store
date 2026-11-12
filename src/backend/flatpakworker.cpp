@@ -92,6 +92,52 @@ bool readUri(const QString &url, QByteArray *out, QString *error)
     return true;
 }
 
+
+// Ensures the official Flathub remote exists in the per-user installation.
+// Existing configurations are left untouched, including intentionally disabled
+// remotes. The .flatpakrepo file supplies the repository URL and GPG key.
+bool ensureDefaultFlathubRemote(FlatpakInstallation *installation)
+{
+    g_autoptr(GError) error = nullptr;
+    g_autoptr(FlatpakRemote) existing = flatpak_installation_get_remote_by_name(
+        installation, "flathub", nullptr, &error);
+    if (existing)
+        return true;
+
+    // A missing remote is expected on a clean installation.
+    g_clear_error(&error);
+
+    const QString repoFileUrl =
+        QStringLiteral("https://dl.flathub.org/repo/flathub.flatpakrepo");
+    QByteArray contents;
+    QString fetchError;
+    if (!readUri(repoFileUrl, &contents, &fetchError)) {
+        qWarning() << "flatpak: cannot download the default Flathub configuration:"
+                   << fetchError;
+        return false;
+    }
+
+    g_autoptr(GBytes) bytes = g_bytes_new(contents.constData(),
+                                          static_cast<gsize>(contents.size()));
+    g_autoptr(FlatpakRemote) remote =
+        flatpak_remote_new_from_file("flathub", bytes, &error);
+    if (!remote) {
+        qWarning() << "flatpak: cannot parse the default Flathub configuration:"
+                   << (error ? error->message : "unknown");
+        return false;
+    }
+
+    g_clear_error(&error);
+    if (!flatpak_installation_add_remote(installation, remote, TRUE, nullptr, &error)) {
+        qWarning() << "flatpak: cannot add the default Flathub remote:"
+                   << (error ? error->message : "unknown");
+        return false;
+    }
+
+    qInfo() << "flatpak: added the default Flathub remote";
+    return true;
+}
+
  
 } // namespace
 
@@ -406,6 +452,11 @@ void FlatpakWorker::loadRemotes()
         Q_EMIT remotesReady({});
         return;
     }
+
+    // Make Flathub available on clean installations before listing sources.
+    // This runs on the Flatpak worker thread, so network access does not block
+    // the user interface.
+    ensureDefaultFlathubRemote(inst);
 
     g_autoptr(GError) error = nullptr;
     g_autoptr(GPtrArray) remotes = flatpak_installation_list_remotes(inst, nullptr, &error);
